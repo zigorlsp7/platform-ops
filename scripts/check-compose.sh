@@ -16,6 +16,24 @@ trap 'rm -f "$local_tmp" "$prod_tmp" "$prod_env_tmp"' EXIT
 
 cp "$REPO_ROOT/docker/.env.ops.prod" "$prod_env_tmp"
 
+# Ensure external shell env does not override values from --env-file during validation.
+compose_vars=(
+  OPS_SHARED_NETWORK
+  GRAFANA_ADMIN_USER
+  GRAFANA_ADMIN_PASSWORD
+  GRAFANA_USERS_ALLOW_SIGN_UP
+  OPENBAO_DEV_ROOT_TOKEN
+  OPENBAO_DEV_LISTEN_ADDRESS
+  TOLGEE_AUTHENTICATION_ENABLED
+  TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED
+  TOLGEE_INITIAL_USERNAME
+  TOLGEE_INITIAL_PASSWORD
+  TOLGEE_JWT_SECRET
+)
+for key in "${compose_vars[@]}"; do
+  unset "$key" || true
+done
+
 # Prod runtime secrets are sourced from SSM during deployment, not from tracked env files.
 # For compose rendering checks, inject non-sensitive placeholders when those keys are missing/empty.
 required_prod_secret_keys=(
