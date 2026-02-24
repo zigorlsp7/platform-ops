@@ -27,8 +27,26 @@ required_prod_secret_keys=(
 for key in "${required_prod_secret_keys[@]}"; do
   current_line="$(awk -F= -v k="$key" '$1 == k {line=$0} END {print line}' "$prod_env_tmp")"
   current_value="${current_line#*=}"
+
   if [ -z "$current_line" ] || [ -z "$current_value" ]; then
-    echo "${key}=__placeholder_for_compose_validation__" >> "$prod_env_tmp"
+    tmp_rewrite="$(mktemp)"
+    awk -F= -v k="$key" -v v="__placeholder_for_compose_validation__" '
+      BEGIN { replaced = 0 }
+      $1 == k {
+        if (!replaced) {
+          print k "=" v
+          replaced = 1
+        }
+        next
+      }
+      { print }
+      END {
+        if (!replaced) {
+          print k "=" v
+        }
+      }
+    ' "$prod_env_tmp" > "$tmp_rewrite"
+    mv "$tmp_rewrite" "$prod_env_tmp"
   fi
 done
 
