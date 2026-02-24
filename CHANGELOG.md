@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/zigorlsp7/platform-ops/compare/v1.0.0...v1.0.1) (2026-02-24)
+
+
+### Bug Fixes
+
+* grafana and tolgee exposed ports for local forwarding ([11bce8f](https://github.com/zigorlsp7/platform-ops/commit/11bce8f21d2b3a63857e5e0a730f131250fdf708))
+* grafana and tolgee exposed ports for local forwarding ([b0409c9](https://github.com/zigorlsp7/platform-ops/commit/b0409c943db88b99e0028d16392026d8c0b3ac84))
+
 ## 1.0.0 (2026-02-24)
 
 
