@@ -94,3 +94,19 @@ docker compose --env-file docker/.env.ops.prod -f docker/compose.ops.prod.yml ps
   - initialize/unseal OpenBao once and persist token/unseal procedure.
 - `permission denied` for OpenBao data:
   - run deploy again after the script adjusts OpenBao volume permissions.
+
+## 8. Access Ops UIs with one command
+
+From repo root:
+
+```bash
+bash ./scripts/ops-port-forward-all.sh
+```
+
+Optional: only specific services:
+
+```bash
+bash ./scripts/ops-port-forward-all.sh --only grafana,tolgee
+```
+
+Press `Ctrl+C` to close all tunnels.
