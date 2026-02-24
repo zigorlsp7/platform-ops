@@ -1,4 +1,4 @@
-name: cvweb-ops-prod
+name: platform-ops-prod
 
 services:
   jaeger:

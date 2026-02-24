@@ -3,7 +3,7 @@
 # You then create Cloudflare A records app/api -> that Elastic IP.
 aws_region = "us-east-1"
 
-project     = "cv-web"
+project     = "platform-ops"
 environment = "prod"
 
 app_domain = "app.example.com"
@@ -24,5 +24,5 @@ github_oidc_provider_arn    = "arn:aws:iam::123456789012:oidc-provider/token.act
 github_repository  = "your-org/your-repo"
 github_environment = "production"
 
-ssm_app_parameter_prefix = "/cv-web/prod/app"
-ssm_ops_parameter_prefix = "/cv-web/prod/ops"
+ssm_app_parameter_prefix = "/platform-ops/prod/app"
+ssm_ops_parameter_prefix = "/platform-ops/prod/ops"

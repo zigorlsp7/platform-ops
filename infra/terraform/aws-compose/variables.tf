@@ -1,7 +1,7 @@
 variable "project" {
   description = "Project slug used for naming."
   type        = string
-  default     = "cv-web"
+  default     = "platform-ops"
 }
 
 variable "environment" {
@@ -36,7 +36,7 @@ variable "root_volume_size_gb" {
 variable "deploy_base_dir" {
   description = "Directory on EC2 where deployment bundles are extracted."
   type        = string
-  default     = "/opt/cv-web"
+  default     = "/opt/platform-ops"
 }
 
 variable "key_name" {
@@ -120,9 +120,9 @@ variable "ecr_web_repository_name" {
 }
 
 variable "ssm_app_parameter_prefix" {
-  description = "SSM path prefix for app env values, e.g. /cv-web/prod/app."
+  description = "SSM path prefix for app env values, e.g. /platform-ops/prod/app."
   type        = string
-  default     = "/cv-web/prod/app"
+  default     = "/platform-ops/prod/app"
 
   validation {
     condition     = startswith(var.ssm_app_parameter_prefix, "/")
@@ -131,9 +131,9 @@ variable "ssm_app_parameter_prefix" {
 }
 
 variable "ssm_ops_parameter_prefix" {
-  description = "SSM path prefix for ops env values, e.g. /cv-web/prod/ops."
+  description = "SSM path prefix for ops env values, e.g. /platform-ops/prod/ops."
   type        = string
-  default     = "/cv-web/prod/ops"
+  default     = "/platform-ops/prod/ops"
 
   validation {
     condition     = startswith(var.ssm_ops_parameter_prefix, "/")

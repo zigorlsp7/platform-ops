@@ -1,7 +1,7 @@
 # Copy to prod.tfvars and fill with your values.
 aws_region = "us-east-1"
 
-project     = "cv-web"
+project     = "platform-ops"
 environment = "prod"
 
 app_domain = "app.example.com"
@@ -37,10 +37,10 @@ github_repository  = "your-org/your-repo"
 github_environment = "production"
 
 # Optional custom names.
-# deploy_bucket_name       = "cv-web-prod-deploy-yourcompany"
-# ecr_api_repository_name  = "cv-web/prod/api"
-# ecr_web_repository_name  = "cv-web/prod/web"
+# deploy_bucket_name       = "platform-ops-prod-deploy-yourcompany"
+# ecr_api_repository_name  = "platform-ops/prod/api"
+# ecr_web_repository_name  = "platform-ops/prod/web"
 
 # Parameter prefixes consumed by scripts/prod-deploy-remote.sh.
-ssm_app_parameter_prefix = "/cv-web/prod/app"
-ssm_ops_parameter_prefix = "/cv-web/prod/ops"
+ssm_app_parameter_prefix = "/platform-ops/prod/app"
+ssm_ops_parameter_prefix = "/platform-ops/prod/ops"

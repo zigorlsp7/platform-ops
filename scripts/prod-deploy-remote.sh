@@ -8,8 +8,8 @@ Usage:
     --release-dir <path> \
     --region <aws-region> \
     --mode <all|ops|app> \
-    --app-ssm-prefix </cv-web/prod/app> \
-    --ops-ssm-prefix </cv-web/prod/ops> \
+    --app-ssm-prefix </platform-ops/prod/app> \
+    --ops-ssm-prefix </platform-ops/prod/ops> \
     --api-image <ecr-uri:tag> \
     --web-image <ecr-uri:tag> \
     --release-tag <tag>

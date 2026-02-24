@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+OPS_ENV_FILE="${OPS_ENV_FILE:-$REPO_ROOT/docker/.env.ops.local}"
+OPS_COMPOSE_FILE="${OPS_COMPOSE_FILE:-$REPO_ROOT/docker/compose.ops.local.yml}"
+REMOVE_VOLUMES="false"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --volumes)
+      REMOVE_VOLUMES="true"
+      shift
+      ;;
+    *)
+      echo "Unknown arg: $1" >&2
+      echo "Usage: $0 [--volumes]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+args=(down --remove-orphans)
+if [ "$REMOVE_VOLUMES" = "true" ]; then
+  args+=(--volumes)
+fi
+
+docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" "${args[@]}"
+
+echo "Ops stack stopped."
