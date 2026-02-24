@@ -9,9 +9,11 @@ on:
         default: main
         type: string
       release_tag:
-        description: "Optional release tag label for this ops bundle (defaults to ops-<run_number>-<run_attempt>)"
+        description: "Optional release tag label for this ops bundle (manual dispatch only; defaults to ops-<run_number>-<run_attempt>)"
         required: false
         type: string
+  release:
+    types: [published]
 
 permissions:
   id-token: write
@@ -35,12 +37,12 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.ref }}
 
       - name: Resolve ops release tag
         id: meta
         run: |
-          raw_tag="${{ inputs.release_tag }}"
+          raw_tag="${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}"
 
           if [ -z "$raw_tag" ]; then
             raw_tag="ops-${{ github.run_number }}-${{ github.run_attempt }}"
