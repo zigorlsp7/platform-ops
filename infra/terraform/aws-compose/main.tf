@@ -40,9 +40,7 @@ locals {
   ecr_api_repository_name = var.ecr_api_repository_name != "" ? var.ecr_api_repository_name : "${var.project}/${var.environment}/api"
   ecr_web_repository_name = var.ecr_web_repository_name != "" ? var.ecr_web_repository_name : "${var.project}/${var.environment}/web"
   deploy_bucket_name      = var.deploy_bucket_name != "" ? var.deploy_bucket_name : "${local.name_prefix}-deploy-${random_id.suffix.hex}"
-
-  ssm_app_prefix_path = trimprefix(var.ssm_app_parameter_prefix, "/")
-  ssm_ops_prefix_path = trimprefix(var.ssm_ops_parameter_prefix, "/")
+  ssm_ops_prefix_path     = trimprefix(var.ssm_ops_parameter_prefix, "/")
 }
 
 resource "aws_vpc" "main" {
@@ -280,7 +278,6 @@ data "aws_iam_policy_document" "ec2_runtime" {
       "ssm:GetParametersByPath",
     ]
     resources = [
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.ssm_app_prefix_path}*",
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.ssm_ops_prefix_path}*",
     ]
   }
@@ -330,23 +327,6 @@ resource "aws_eip" "app" {
   tags     = merge(local.tags, { Name = "${local.name_prefix}-eip" })
 }
 
-resource "aws_route53_record" "app" {
-  count   = var.create_route53_records ? 1 : 0
-  zone_id = var.route53_zone_id
-  name    = var.app_domain
-  type    = "A"
-  ttl     = 300
-  records = [aws_eip.app.public_ip]
-}
-
-resource "aws_route53_record" "api" {
-  count   = var.create_route53_records ? 1 : 0
-  zone_id = var.route53_zone_id
-  name    = var.api_domain
-  type    = "A"
-  ttl     = 300
-  records = [aws_eip.app.public_ip]
-}
 
 resource "aws_iam_openid_connect_provider" "github" {
   count = var.create_github_oidc_provider ? 1 : 0

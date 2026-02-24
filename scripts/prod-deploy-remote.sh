@@ -7,22 +7,16 @@ Usage:
   $0 \
     --release-dir <path> \
     --region <aws-region> \
-    --mode <all|ops|app> \
-    --app-ssm-prefix </platform-ops/prod/app> \
     --ops-ssm-prefix </platform-ops/prod/ops> \
-    --api-image <ecr-uri:tag> \
-    --web-image <ecr-uri:tag> \
-    --release-tag <tag>
+    --release-tag <tag> \
+    [--mode ops]
 USAGE
 }
 
 RELEASE_DIR=""
 AWS_REGION=""
-MODE="all"
-APP_SSM_PREFIX=""
+MODE="ops"
 OPS_SSM_PREFIX=""
-API_IMAGE=""
-WEB_IMAGE=""
 RELEASE_TAG=""
 
 while [ "$#" -gt 0 ]; do
@@ -39,20 +33,8 @@ while [ "$#" -gt 0 ]; do
       MODE="$2"
       shift 2
       ;;
-    --app-ssm-prefix)
-      APP_SSM_PREFIX="$2"
-      shift 2
-      ;;
     --ops-ssm-prefix)
       OPS_SSM_PREFIX="$2"
-      shift 2
-      ;;
-    --api-image)
-      API_IMAGE="$2"
-      shift 2
-      ;;
-    --web-image)
-      WEB_IMAGE="$2"
       shift 2
       ;;
     --release-tag)
@@ -86,41 +68,11 @@ require_value "--region" "$AWS_REGION"
 require_value "--ops-ssm-prefix" "$OPS_SSM_PREFIX"
 require_value "--release-tag" "$RELEASE_TAG"
 
-case "$MODE" in
-  all)
-    require_value "--app-ssm-prefix" "$APP_SSM_PREFIX"
-    require_value "--api-image" "$API_IMAGE"
-    require_value "--web-image" "$WEB_IMAGE"
-    ;;
-  app)
-    require_value "--app-ssm-prefix" "$APP_SSM_PREFIX"
-    require_value "--api-image" "$API_IMAGE"
-    require_value "--web-image" "$WEB_IMAGE"
-    ;;
-  ops)
-    ;;
-  *)
-    echo "Invalid --mode value: $MODE (expected: all|ops|app)" >&2
-    usage
-    exit 1
-    ;;
-esac
-
-MODE_RUNS_OPS="false"
-MODE_RUNS_APP="false"
-
-case "$MODE" in
-  all)
-    MODE_RUNS_OPS="true"
-    MODE_RUNS_APP="true"
-    ;;
-  ops)
-    MODE_RUNS_OPS="true"
-    ;;
-  app)
-    MODE_RUNS_APP="true"
-    ;;
-esac
+if [ "$MODE" != "ops" ]; then
+  echo "Invalid --mode value: $MODE (expected: ops)" >&2
+  usage
+  exit 1
+fi
 
 retry() {
   local attempts="$1"
@@ -263,44 +215,6 @@ if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev
   exit 1
 fi
 
-ECR_LOGGED_IN_REGISTRIES="|"
-
-is_ecr_registry() {
-  local registry="$1"
-  [[ "$registry" == *".dkr.ecr."*".amazonaws.com"* ]]
-}
-
-login_ecr_for_image() {
-  local image="$1"
-  local registry
-  local registry_region
-
-  registry="${image%%/*}"
-
-  # Images without an explicit registry (e.g. docker.io/library/alpine) are skipped.
-  if [ -z "$registry" ] || [ "$registry" = "$image" ]; then
-    return 0
-  fi
-
-  if ! is_ecr_registry "$registry"; then
-    return 0
-  fi
-
-  if [[ "$ECR_LOGGED_IN_REGISTRIES" == *"|${registry}|"* ]]; then
-    return 0
-  fi
-
-  registry_region="$(printf '%s' "$registry" | awk -F'.' '{print $4}')"
-  if [ -z "$registry_region" ]; then
-    registry_region="$AWS_REGION"
-  fi
-
-  echo "[deploy] Logging into ECR registry: $registry (region=$registry_region)"
-  aws ecr get-login-password --region "$registry_region" | docker login --username AWS --password-stdin "$registry" >/dev/null
-
-  ECR_LOGGED_IN_REGISTRIES="${ECR_LOGGED_IN_REGISTRIES}${registry}|"
-}
-
 prepare_openbao_volume_permissions() {
   local openbao_uid
   local openbao_gid
@@ -318,7 +232,6 @@ prepare_openbao_volume_permissions() {
     openbao_gid="1000"
   fi
 
-  # If the probe returns root, prefer the common non-root OpenBao runtime IDs.
   if [ "$openbao_uid" = "0" ]; then
     openbao_uid="100"
   fi
@@ -338,7 +251,6 @@ fi
 
 cd "$RELEASE_DIR"
 
-APP_ENV_FILE="docker/.env.app.prod"
 OPS_ENV_FILE="docker/.env.ops.prod"
 
 fetch_ssm_path_to_env_file() {
@@ -361,50 +273,19 @@ fetch_ssm_path_to_env_file() {
   chmod 600 "$output_file"
 }
 
-upsert_env_var() {
-  local file="$1"
-  local key="$2"
-  local value="$3"
-  local tmp
-
-  tmp="$(mktemp)"
-
-  awk -v key="$key" -v value="$value" -F= '
-    BEGIN { updated=0 }
-    $1 == key { print key "=" value; updated=1; next }
-    { print }
-    END { if (!updated) print key "=" value }
-  ' "$file" > "$tmp"
-
-  mv "$tmp" "$file"
-}
-
 fetch_ssm_path_to_env_file "$OPS_SSM_PREFIX" "$OPS_ENV_FILE"
 
-if [ "$MODE_RUNS_APP" = "true" ]; then
-  fetch_ssm_path_to_env_file "$APP_SSM_PREFIX" "$APP_ENV_FILE"
-  upsert_env_var "$APP_ENV_FILE" "API_IMAGE" "$API_IMAGE"
-  upsert_env_var "$APP_ENV_FILE" "WEB_IMAGE" "$WEB_IMAGE"
-  upsert_env_var "$APP_ENV_FILE" "NEXT_PUBLIC_RELEASE" "$RELEASE_TAG"
-fi
-
-network_name=""
-if [ "$MODE_RUNS_APP" = "true" ]; then
-  network_name="$(grep -E '^CV_SHARED_NETWORK=' "$APP_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
-fi
-if [ -z "$network_name" ]; then
-  network_name="$(grep -E '^CV_SHARED_NETWORK=' "$OPS_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
-fi
+network_name="$(grep -E '^CV_SHARED_NETWORK=' "$OPS_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
 if [ -z "$network_name" ]; then
   network_name="cv_shared"
 fi
 
 docker network create "$network_name" >/dev/null 2>&1 || true
-if [ "$MODE_RUNS_OPS" = "true" ]; then
-  prepare_openbao_volume_permissions
-  echo "[deploy] Starting ops stack"
-  run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml up -d
-fi
+
+prepare_openbao_volume_permissions
+
+echo "[deploy] Starting ops stack"
+run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml up -d
 
 echo "[deploy] Waiting for OpenBao health"
 openbao_ready="false"
@@ -416,54 +297,23 @@ while [ $i -le 60 ]; do
     openbao_ready="true"
     break
   fi
+
   if [ "$openbao_code" = "501" ] || [ "$openbao_code" = "503" ]; then
-    if [ "$MODE_RUNS_APP" = "false" ]; then
-      echo "[deploy] OpenBao health is $openbao_code (not initialized or sealed), continuing because mode=$MODE."
-      openbao_ready="true"
-      break
-    fi
-    echo "[deploy] OpenBao health is $openbao_code (not initialized or sealed). App deployment requires initialized and unsealed OpenBao."
+    echo "[deploy] OpenBao health is $openbao_code (not initialized or sealed), continuing for ops-only deploy."
+    openbao_ready="true"
     break
   fi
+
   sleep 2
   i=$((i + 1))
 done
 
 if [ "$openbao_ready" != "true" ]; then
-  echo "OpenBao did not become ready (mode=$MODE, last_health_code=${openbao_code:-unknown})." >&2
+  echo "OpenBao did not become ready (last_health_code=${openbao_code:-unknown})." >&2
   run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml logs --no-color --tail=120 openbao || true
   exit 1
 fi
 
-if [ "$MODE_RUNS_APP" = "true" ]; then
-  login_ecr_for_image "$API_IMAGE"
-  login_ecr_for_image "$WEB_IMAGE"
-
-  echo "[deploy] Starting app stack"
-  run_compose --env-file "$APP_ENV_FILE" -f docker/compose.app.prod.yml up -d
-
-  echo "[deploy] Running migrations"
-  run_compose --env-file "$APP_ENV_FILE" -f docker/compose.app.prod.yml --profile tools run --rm api_migrate
-
-  api_domain="$(grep -E '^API_DOMAIN=' "$APP_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
-  web_domain="$(grep -E '^WEB_DOMAIN=' "$APP_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
-
-  if [ -z "$api_domain" ] || [ -z "$web_domain" ]; then
-    echo "API_DOMAIN and WEB_DOMAIN must be present in $APP_ENV_FILE" >&2
-    exit 1
-  fi
-
-  echo "[deploy] Health checking API via Caddy"
-  curl -fsS -H "Host: $api_domain" http://127.0.0.1/v1/health/ready >/dev/null
-
-  echo "[deploy] Health checking web via Caddy"
-  curl -fsS -H "Host: $web_domain" http://127.0.0.1/ >/dev/null
-
-  run_compose --env-file "$APP_ENV_FILE" -f docker/compose.app.prod.yml ps
-fi
-
-if [ "$MODE_RUNS_OPS" = "true" ] && [ "$MODE_RUNS_APP" = "false" ]; then
-  run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml ps
-fi
+run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml ps
 
 echo "[deploy] Release $RELEASE_TAG deployed successfully (mode=$MODE)"

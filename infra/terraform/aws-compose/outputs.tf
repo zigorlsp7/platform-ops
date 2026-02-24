@@ -8,16 +8,6 @@ output "instance_public_ip" {
   value       = aws_eip.app.public_ip
 }
 
-output "app_url" {
-  description = "Public application URL."
-  value       = "https://${var.app_domain}"
-}
-
-output "api_url" {
-  description = "Public API URL."
-  value       = "https://${var.api_domain}"
-}
-
 output "deploy_bucket_name" {
   description = "S3 bucket used by CI to upload release bundles."
   value       = aws_s3_bucket.deploy.id
@@ -38,11 +28,6 @@ output "github_deploy_role_arn" {
   value       = aws_iam_role.github_deploy.arn
 }
 
-output "ssm_app_parameter_prefix" {
-  description = "SSM prefix expected by deploy script for app env values."
-  value       = var.ssm_app_parameter_prefix
-}
-
 output "ssm_ops_parameter_prefix" {
   description = "SSM prefix expected by deploy script for ops env values."
   value       = var.ssm_ops_parameter_prefix
@@ -56,8 +41,6 @@ output "github_actions_variables" {
     AWS_DEPLOY_INSTANCE_ID     = aws_instance.app.id
     AWS_ECR_API_REPOSITORY_URI = aws_ecr_repository.api.repository_url
     AWS_ECR_WEB_REPOSITORY_URI = aws_ecr_repository.web.repository_url
-    AWS_SSM_APP_PREFIX         = var.ssm_app_parameter_prefix
     AWS_SSM_OPS_PREFIX         = var.ssm_ops_parameter_prefix
-    DEPLOY_HEALTHCHECK_URL     = "https://${var.api_domain}/v1/health/ready"
   }
 }

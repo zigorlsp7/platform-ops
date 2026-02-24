@@ -22,7 +22,8 @@ Stack: `infra/terraform/aws-compose`
 6. S3 deploy bundle bucket.
 7. IAM role for EC2 runtime.
 8. IAM role for GitHub OIDC deploy.
-9. Optional Route53 records.
+
+Per-application DNS hostnames are managed outside this shared module.
 
 ## 2. Prerequisites
 
@@ -53,19 +54,9 @@ terraform init -reconfigure
 
 ## 4. Provision infrastructure
 
-Pick example based on DNS ownership:
-
 ```bash
-# Route53 authoritative
-cp environments/prod.route53.tfvars.example environments/prod.tfvars
-
-# OR Cloudflare/external DNS authoritative
-cp environments/prod.cloudflare.tfvars.example environments/prod.tfvars
-```
-
-Then:
-
-```bash
+cp environments/prod.tfvars.example environments/prod.tfvars
+# edit environments/prod.tfvars
 terraform plan -var-file=environments/prod.tfvars
 terraform apply -var-file=environments/prod.tfvars
 ```

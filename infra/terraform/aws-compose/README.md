@@ -1,28 +1,19 @@
 # AWS EC2 + Compose Production Stack (Recommended for this repo)
 
-This Terraform stack provisions the minimum AWS infrastructure to deploy the current split compose setup:
-
-- `docker/compose.app.prod.yml`
-- `docker/compose.ops.prod.yml`
+This Terraform stack provisions shared platform infrastructure for compose-based runtime.
 
 It uses:
 
-- 1 EC2 instance (app + ops on same host)
+- 1 EC2 instance (shared app + ops host)
 - 1 Elastic IP
 - VPC + public subnet + security group
 - ECR repos for API/Web images
 - S3 deploy bundle bucket
 - IAM role for EC2 runtime
 - IAM role for GitHub Actions OIDC deploy
-- Optional Route53 records (`app`, `api`)
 
-DNS can be handled in two ways:
-
-1. Route53 authoritative:
-- Set `create_route53_records=true` and provide `route53_zone_id`.
-2. Cloudflare (or any external DNS) authoritative:
-- Set `create_route53_records=false`.
-- After apply, create external `A` records (`app`, `api`) pointing to `terraform output instance_public_ip`.
+Domain routing for specific applications is intentionally handled outside this module
+(app repositories and their runtime env/config).
 
 ## Directory
 
@@ -32,8 +23,8 @@ DNS can be handled in two ways:
 - `outputs.tf` values to wire into GitHub
 - `templates/user-data.sh.tftpl` EC2 bootstrap
 - `environments/prod.tfvars.example` starter values
-- `environments/prod.route53.tfvars.example` Route53-focused example
-- `environments/prod.cloudflare.tfvars.example` Cloudflare-focused example
+- `environments/prod.route53.tfvars.example` legacy alias (same baseline)
+- `environments/prod.cloudflare.tfvars.example` legacy alias (same baseline)
 
 ## 1. Initialize Terraform
 
@@ -71,6 +62,7 @@ Use those outputs to configure GitHub Environment `production` variables/secrets
 - It does **not** create your OpenBao secrets.
 - It does **not** populate SSM env parameters.
 - It does **not** unseal OpenBao after reboot.
+- It does **not** configure per-application DNS hostnames.
 
 Use:
 
