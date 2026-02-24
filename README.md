@@ -78,6 +78,12 @@ bash ./scripts/local-stack-down-ops.sh --volumes
 
 Runbook: `docs/ops-runbook.md`.
 
+## Release Automation
+
+- `.github/workflows/release-please.yml` runs on pushes to `main` and updates/creates the Release PR.
+- When the Release PR is merged and a GitHub Release is published, `.github/workflows/deploy-ops.yml` triggers automatically and deploys that release tag.
+- Manual deploy remains available via `workflow_dispatch` in `.github/workflows/deploy-ops.yml`.
+
 ## App Deployment Handoff (optional)
 
 Application repos can hand off deployment by sending `repository_dispatch` event type `platform-app-release`.
