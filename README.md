@@ -81,8 +81,11 @@ Runbook: `docs/ops-runbook.md`.
 ## Release Automation
 
 - `.github/workflows/release-please.yml` runs on pushes to `main` and updates/creates the Release PR.
+- `.github/workflows/auto-approve-release-please.yml` auto-approves Release Please PRs from `github-actions[bot]` and enables auto-merge.
 - When the Release PR is merged and a GitHub Release is published, `.github/workflows/deploy-ops.yml` triggers automatically and deploys that release tag.
 - Manual deploy remains available via `workflow_dispatch` in `.github/workflows/deploy-ops.yml`.
+- Required secret for auto-approval/auto-merge: `RELEASE_PLEASE_APPROVER_TOKEN` (a PAT from a separate bot/user with `repo` scope).
+- In repository settings, enable `Allow auto-merge` (Settings -> General -> Pull Requests).
 
 ## App Deployment Handoff (optional)
 
