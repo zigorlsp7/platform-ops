@@ -1,0 +1,148 @@
+{
+  "uid": "cv-api-overview",
+  "title": "CV API Overview",
+  "tags": ["cv", "api", "observability"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "30m", "1h", "6h", "12h"]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "RPS (overall)",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total[30s]))",
+          "legendFormat": "rps"
+        }
+      ],
+      "options": {
+        "legend": { "showLegend": true, "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Error rate (5xx)",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx/s"
+        }
+      ],
+      "options": {
+        "legend": { "showLegend": true, "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "p95 latency (seconds)",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[30s])) by (le))",
+          "legendFormat": "p95"
+        }
+      ],
+      "options": {
+        "legend": { "showLegend": true, "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "CPU (process)",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(process_cpu_seconds_total[30s])",
+          "legendFormat": "cpu_seconds/s"
+        }
+      ],
+      "options": {
+        "legend": { "showLegend": true, "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Memory (process RSS)",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "name": "Prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "rss_bytes"
+        }
+      ],
+      "options": {
+        "legend": { "showLegend": true, "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      }
+    },
+    {
+      "id": 6,
+      "type": "logs",
+      "title": "API Logs (Loki)",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "name": "Loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"docker-json-logs\"}"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    },
+    {
+        "id": 7,
+        "type": "logs",
+        "title": "API Logs (Only)",
+        "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+        "datasource": { "type": "loki", "name": "Loki" },
+        "targets": [
+            {
+            "refId": "A",
+            "expr": "{job=\"docker-json-logs\", container_id=\"b0f3f47c4e50f192fcf27b5478c24bbae53b6515ecfc65c7546437787b5772d1\"}"
+            }
+        ],
+        "options": {
+            "showTime": true,
+            "showLabels": false,
+            "wrapLogMessage": true,
+            "prettifyLogMessage": true,
+            "enableLogDetails": true,
+            "dedupStrategy": "none"
+        }
+    }
+  ]
+}

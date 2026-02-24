@@ -1,0 +1,46 @@
+# Copy to prod.tfvars and fill with your values.
+aws_region = "us-east-1"
+
+project     = "cv-web"
+environment = "prod"
+
+app_domain = "app.example.com"
+api_domain = "api.example.com"
+
+# DNS strategy:
+# 1) Route53 authoritative DNS:
+#    create_route53_records = true
+#    route53_zone_id        = "Z1234567890ABC"
+#
+# 2) Cloudflare (or other external DNS) authoritative DNS:
+#    create_route53_records = false
+#    route53_zone_id        = ""
+#    then create A records app/api manually pointing to terraform output instance_public_ip.
+create_route53_records = false
+route53_zone_id        = ""
+
+# Cheapest practical starting point for this compose stack.
+instance_type = "t3.large"
+
+# Set true only if you need SSH. Prefer SSM Session Manager.
+enable_ssh         = false
+ssh_ingress_cidrs  = []
+key_name           = ""
+
+# If this is the first OIDC setup in the account, set true.
+# If an OIDC provider already exists in IAM, keep false and set github_oidc_provider_arn.
+create_github_oidc_provider = false
+github_oidc_provider_arn    = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+
+# Repo allowed to assume the deploy role.
+github_repository  = "your-org/your-repo"
+github_environment = "production"
+
+# Optional custom names.
+# deploy_bucket_name       = "cv-web-prod-deploy-yourcompany"
+# ecr_api_repository_name  = "cv-web/prod/api"
+# ecr_web_repository_name  = "cv-web/prod/web"
+
+# Parameter prefixes consumed by scripts/prod-deploy-remote.sh.
+ssm_app_parameter_prefix = "/cv-web/prod/app"
+ssm_ops_parameter_prefix = "/cv-web/prod/ops"

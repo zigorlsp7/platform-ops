@@ -1,0 +1,28 @@
+# Cloudflare-authoritative DNS example.
+# Terraform provisions AWS infra and outputs an Elastic IP.
+# You then create Cloudflare A records app/api -> that Elastic IP.
+aws_region = "us-east-1"
+
+project     = "cv-web"
+environment = "prod"
+
+app_domain = "app.example.com"
+api_domain = "api.example.com"
+
+create_route53_records = false
+route53_zone_id        = ""
+
+instance_type = "t3.large"
+
+enable_ssh        = false
+ssh_ingress_cidrs = []
+key_name          = ""
+
+create_github_oidc_provider = false
+github_oidc_provider_arn    = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+
+github_repository  = "your-org/your-repo"
+github_environment = "production"
+
+ssm_app_parameter_prefix = "/cv-web/prod/app"
+ssm_ops_parameter_prefix = "/cv-web/prod/ops"

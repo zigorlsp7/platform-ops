@@ -1,0 +1,6 @@
+environment = "dev"
+aws_region  = "eu-west-1"
+domain_name = "cv-dev.example.com"
+
+# Replace before apply.
+db_password = "replace-me"

@@ -1,0 +1,24 @@
+# Terraform local artifacts
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.plan
+*.tfplan
+.terraform.lock.hcl
+**/environments/*.tfvars
+!**/environments/*.tfvars.example
+
+# Env files
+.env
+.env.*
+!*.example
+!docker/.env.ops.local
+!docker/.env.ops.prod
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log

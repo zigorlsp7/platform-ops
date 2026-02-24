@@ -1,0 +1,18 @@
+groups:
+  - name: cv_api_http
+    rules:
+      - record: cv_api:http_rps:rate30s
+        expr: sum(rate(http_requests_total[30s]))
+
+      - record: cv_api:http_error_ratio:rate5m
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_requests_total[5m])), 1)
+
+      - record: cv_api:http_p95_seconds:5m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket[5m]))
+          )

@@ -1,0 +1,116 @@
+name: cvweb-ops-prod
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.53
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:16686:16686"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    networks: [cv_shared]
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.98.0
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yml"]
+    volumes:
+      - ../docker/otel-collector-config.yml:/etc/otelcol/config.yml:ro
+    depends_on:
+      - jaeger
+    networks: [cv_shared]
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    volumes:
+      - ../docker/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "127.0.0.1:9093:9093"
+    networks: [cv_shared]
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ../docker/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
+      - ../docker/prometheus.rules.yml:/etc/prometheus/prometheus.rules.yml:ro
+      - ../docker/prometheus.alerts.yml:/etc/prometheus/prometheus.alerts.yml:ro
+      - ops-prod-prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - alertmanager
+    networks: [cv_shared]
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:?GRAFANA_ADMIN_USER is required}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      - GF_USERS_ALLOW_SIGN_UP=${GRAFANA_USERS_ALLOW_SIGN_UP:?GRAFANA_USERS_ALLOW_SIGN_UP is required}
+    volumes:
+      - ops-prod-grafana-data:/var/lib/grafana
+      - ../docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks: [cv_shared]
+
+  loki:
+    image: grafana/loki:2.9.8
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/config.yml"]
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ../docker/loki/config.yml:/etc/loki/config.yml:ro
+      - ops-prod-loki-data:/loki
+    networks: [cv_shared]
+
+  tolgee:
+    image: tolgee/tolgee:v3.141.1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:8080"
+    volumes:
+      - ops-prod-tolgee-data:/data
+      - ./tolgee/config.yaml:/config.yaml:ro
+    command: ["--config=/config.yaml"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz >/dev/null 2>&1 || wget -qO- http://localhost:8080/api/healthz >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [cv_shared]
+
+  openbao:
+    image: openbao/openbao:latest
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    command: ["server", "-config=/openbao/config/prod.hcl"]
+    ports:
+      - "127.0.0.1:8200:8200"
+    volumes:
+      - ../docker/openbao/prod.hcl:/openbao/config/prod.hcl:ro
+      - ops-prod-openbao-data:/openbao/data
+    networks: [cv_shared]
+
+networks:
+  cv_shared:
+    name: ${CV_SHARED_NETWORK:?CV_SHARED_NETWORK is required}
+    external: true
+
+volumes:
+  ops-prod-prometheus-data:
+  ops-prod-grafana-data:
+  ops-prod-loki-data:
+  ops-prod-tolgee-data:
+  ops-prod-openbao-data:
