@@ -34,21 +34,43 @@ for key in "${compose_vars[@]}"; do
   unset "$key" || true
 done
 
-# Prod runtime secrets are sourced from SSM during deployment, not from tracked env files.
-# For compose rendering checks, inject non-sensitive placeholders when those keys are missing/empty.
-required_prod_secret_keys=(
+# Prod runtime values are sourced from SSM during deployment, not from tracked env files.
+# For compose rendering checks, inject non-sensitive placeholders when required keys are missing/empty.
+required_prod_keys=(
+  OPS_SHARED_NETWORK
+  GRAFANA_ADMIN_USER
   GRAFANA_ADMIN_PASSWORD
+  GRAFANA_USERS_ALLOW_SIGN_UP
+  TOLGEE_AUTHENTICATION_ENABLED
+  TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED
+  TOLGEE_INITIAL_USERNAME
   TOLGEE_INITIAL_PASSWORD
   TOLGEE_JWT_SECRET
 )
 
-for key in "${required_prod_secret_keys[@]}"; do
+placeholder_for_key() {
+  local key="$1"
+  case "$key" in
+    GRAFANA_USERS_ALLOW_SIGN_UP|TOLGEE_AUTHENTICATION_ENABLED|TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED)
+      echo "false"
+      ;;
+    OPS_SHARED_NETWORK)
+      echo "platform_ops_shared"
+      ;;
+    *)
+      echo "__placeholder_for_compose_validation__"
+      ;;
+  esac
+}
+
+for key in "${required_prod_keys[@]}"; do
   current_line="$(awk -F= -v k="$key" '$1 == k {line=$0} END {print line}' "$prod_env_tmp")"
   current_value="${current_line#*=}"
 
   if [ -z "$current_line" ] || [ -z "$current_value" ]; then
+    value="$(placeholder_for_key "$key")"
     tmp_rewrite="$(mktemp)"
-    awk -F= -v k="$key" -v v="__placeholder_for_compose_validation__" '
+    awk -F= -v k="$key" -v v="$value" '
       BEGIN { replaced = 0 }
       $1 == k {
         if (!replaced) {
