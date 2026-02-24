@@ -124,24 +124,24 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier             = "${local.name_prefix}-postgres"
-  engine                 = "postgres"
-  engine_version         = "16"
-  instance_class         = "db.t4g.micro"
-  allocated_storage      = 20
-  max_allocated_storage  = 100
-  db_name                = var.db_name
-  username               = var.db_username
-  password               = var.db_password
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  backup_retention_period = local.is_prod ? 7 : 1
-  deletion_protection     = local.is_prod
-  skip_final_snapshot     = false
+  identifier                = "${local.name_prefix}-postgres"
+  engine                    = "postgres"
+  engine_version            = "16"
+  instance_class            = "db.t4g.micro"
+  allocated_storage         = 20
+  max_allocated_storage     = 100
+  db_name                   = var.db_name
+  username                  = var.db_username
+  password                  = var.db_password
+  db_subnet_group_name      = aws_db_subnet_group.main.name
+  vpc_security_group_ids    = [aws_security_group.rds.id]
+  backup_retention_period   = local.is_prod ? 7 : 1
+  deletion_protection       = local.is_prod
+  skip_final_snapshot       = false
   final_snapshot_identifier = "${local.name_prefix}-postgres-final"
-  storage_encrypted       = true
-  publicly_accessible    = false
-  tags                   = local.tags
+  storage_encrypted         = true
+  publicly_accessible       = false
+  tags                      = local.tags
 }
 
 resource "aws_ecr_repository" "api" {
