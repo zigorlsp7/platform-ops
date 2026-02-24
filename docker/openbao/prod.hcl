@@ -8,7 +8,7 @@ listener "tcp" {
 
 storage "raft" {
   path    = "/openbao/data"
-  node_id = "cvweb-openbao-prod-1"
+  node_id = "platformops-openbao-prod-1"
 }
 
 api_addr = "http://openbao:8200"

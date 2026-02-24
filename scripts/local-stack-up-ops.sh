@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OPS_ENV_FILE="docker/.env.ops.local"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+OPS_ENV_FILE="${OPS_ENV_FILE:-$REPO_ROOT/docker/.env.ops.local}"
+OPS_COMPOSE_FILE="${OPS_COMPOSE_FILE:-$REPO_ROOT/docker/compose.ops.local.yml}"
 OPENBAO_LOCAL_ADDR="${OPENBAO_LOCAL_ADDR:-http://localhost:8200}"
 
 read_env_var_from_file() {
@@ -40,7 +44,7 @@ if [ -z "$network_name" ]; then
 fi
 
 docker network create "$network_name" >/dev/null 2>&1 || true
-docker compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.local.yml up -d
+docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" up -d
 
 echo "Waiting for OpenBao to become ready..."
 i=1
@@ -55,7 +59,7 @@ done
 
 if [ $i -gt 60 ]; then
   echo "OpenBao did not become ready in time" >&2
-  docker compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.local.yml logs --no-color --tail=120 openbao || true
+  docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" logs --no-color --tail=120 openbao || true
   exit 1
 fi
 

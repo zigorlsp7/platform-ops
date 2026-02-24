@@ -1,7 +1,7 @@
 variable "project" {
   type        = string
   description = "Project slug used for naming."
-  default     = "cv-web"
+  default     = "platform-ops"
 }
 
 variable "environment" {

@@ -1,6 +1,6 @@
 aws_region  = "us-east-1"
-project     = "cv-web"
+project     = "platform-ops"
 environment = "prod"
 
 # Optional fixed bucket name. Leave empty to auto-generate unique suffix.
-# state_bucket_name = "cv-web-prod-tfstate-yourcompany"
+# state_bucket_name = "platform-ops-prod-tfstate-yourcompany"

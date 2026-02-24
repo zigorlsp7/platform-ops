@@ -83,7 +83,7 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_security_group" "app" {
   name        = "${local.name_prefix}-app-sg"
-  description = "Security group for cv-web EC2 host"
+  description = "Security group for platform-ops EC2 host"
   vpc_id      = aws_vpc.main.id
 
   ingress {
