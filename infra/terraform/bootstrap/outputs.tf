@@ -5,7 +5,7 @@ output "state_bucket_name" {
 
 output "backend_config_snippet" {
   description = "Paste this backend block in your environment stack."
-  value = <<EOT
+  value       = <<EOT
 terraform {
   backend "s3" {
     bucket       = "${aws_s3_bucket.tfstate.id}"

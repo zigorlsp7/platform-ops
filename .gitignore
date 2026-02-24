@@ -8,6 +8,9 @@
 **/environments/*.tfvars
 !**/environments/*.tfvars.example
 
+# Node
+node_modules/
+
 # Env files
 .env
 .env.*

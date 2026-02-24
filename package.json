@@ -1,0 +1,18 @@
+{
+  "name": "platform-ops",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Operations and infrastructure for platform environments",
+  "scripts": {
+    "prepare": "husky",
+    "check:secrets": "bash ./scripts/check-secrets.sh",
+    "check:shell": "bash ./scripts/check-shell.sh",
+    "check:workflows": "bash ./scripts/check-workflows.sh",
+    "check:compose": "bash ./scripts/check-compose.sh",
+    "check:terraform": "bash ./scripts/check-terraform-fmt.sh",
+    "check:hooks": "npm run check:secrets && npm run check:shell && npm run check:workflows && npm run check:compose && npm run check:terraform"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

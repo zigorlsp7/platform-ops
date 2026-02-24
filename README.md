@@ -8,6 +8,45 @@ Shared operations and infrastructure repository for platform services.
 - Ops Docker stack (OpenBao, Prometheus, Grafana, Loki, Tolgee, OTel, Alertmanager, Jaeger)
 - Deployment orchestration workflows and scripts
 
+## Husky Commit Checks
+
+This repo uses Husky + Node scripts for local quality gates.
+
+Install once:
+
+```bash
+npm install
+```
+
+That installs dependencies and enables Git hooks via `prepare`.
+
+Run checks manually:
+
+```bash
+npm run check:hooks
+```
+
+Checks include:
+
+- gitleaks secret scan (staged files)
+- shell syntax (`bash -n`)
+- workflow YAML parse
+- compose config render (local/prod)
+- terraform fmt check
+
+Requirements for checks:
+
+1. `docker`
+2. `terraform`
+3. `ruby`
+4. `gitleaks`
+
+Install gitleaks on macOS:
+
+```bash
+brew install gitleaks
+```
+
 ## Local First Validation
 
 From repo root:

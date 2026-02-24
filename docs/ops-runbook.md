@@ -2,6 +2,13 @@
 
 This runbook validates `platform-ops` independently from any application repo.
 
+## 0. Install Husky checks (recommended)
+
+```bash
+npm install
+npm run check:hooks
+```
+
 ## 1. Local startup
 
 ```bash
