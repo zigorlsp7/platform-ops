@@ -78,6 +78,31 @@ bash ./scripts/local-stack-down-ops.sh --volumes
 
 Runbook: `docs/ops-runbook.md`.
 
+## Ops UI Access (Private via SSM)
+
+Start all UI tunnels in one command:
+
+```bash
+bash ./scripts/ops-port-forward-all.sh
+```
+
+Default local URLs:
+
+- OpenBao: `http://127.0.0.1:18200`
+- Grafana: `http://127.0.0.1:13000`
+- Tolgee: `http://127.0.0.1:18080`
+- Jaeger: `http://127.0.0.1:16686`
+- Prometheus: `http://127.0.0.1:19090`
+- Alertmanager: `http://127.0.0.1:19093`
+- Loki: `http://127.0.0.1:13100`
+
+Examples:
+
+```bash
+bash ./scripts/ops-port-forward-all.sh --only grafana,tolgee
+bash ./scripts/ops-port-forward-all.sh --instance-id i-xxxxxxxxxxxxxxxxx
+```
+
 ## Release Automation
 
 - `.github/workflows/release-please.yml` runs on pushes to `main` and updates/creates the Release PR.
