@@ -88,10 +88,3 @@ Runbook: `docs/ops-runbook.md`.
 - Required secret for auto-approval/auto-merge: `RELEASE_PLEASE_APPROVER_TOKEN` (PAT with `pull_requests:write`; must be a different identity than `RELEASE_PLEASE_TOKEN`).
 - In repository settings, enable `Allow auto-merge` (Settings -> General -> Pull Requests).
 
-## App Deployment Handoff (optional)
-
-Application repos can hand off deployment by sending `repository_dispatch` event type `platform-app-release`.
-
-Workflow entrypoint in this repo:
-
-- `.github/workflows/deploy-app-from-dispatch.yml`

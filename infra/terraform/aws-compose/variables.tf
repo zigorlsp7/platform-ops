@@ -74,33 +74,6 @@ variable "public_subnet_cidr" {
   default     = "10.50.1.0/24"
 }
 
-variable "route53_zone_id" {
-  description = "Route53 hosted zone ID where app/api records are created (only when create_route53_records=true)."
-  type        = string
-  default     = ""
-}
-
-variable "create_route53_records" {
-  description = "Whether to create Route53 A records for app_domain and api_domain."
-  type        = bool
-  default     = true
-
-  validation {
-    condition     = var.create_route53_records ? var.route53_zone_id != "" : true
-    error_message = "route53_zone_id is required when create_route53_records=true."
-  }
-}
-
-variable "app_domain" {
-  description = "Public web domain (used for Route53 output and app env)."
-  type        = string
-}
-
-variable "api_domain" {
-  description = "Public API domain (used for Route53 output and app env)."
-  type        = string
-}
-
 variable "deploy_bucket_name" {
   description = "Optional pre-defined S3 bucket name for deploy bundles. Leave empty to auto-generate."
   type        = string
@@ -117,17 +90,6 @@ variable "ecr_web_repository_name" {
   description = "Optional ECR repository name for Web image."
   type        = string
   default     = ""
-}
-
-variable "ssm_app_parameter_prefix" {
-  description = "SSM path prefix for app env values, e.g. /platform-ops/prod/app."
-  type        = string
-  default     = "/platform-ops/prod/app"
-
-  validation {
-    condition     = startswith(var.ssm_app_parameter_prefix, "/")
-    error_message = "ssm_app_parameter_prefix must start with '/'."
-  }
 }
 
 variable "ssm_ops_parameter_prefix" {
