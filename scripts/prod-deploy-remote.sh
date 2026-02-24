@@ -275,9 +275,9 @@ fetch_ssm_path_to_env_file() {
 
 fetch_ssm_path_to_env_file "$OPS_SSM_PREFIX" "$OPS_ENV_FILE"
 
-network_name="$(grep -E '^CV_SHARED_NETWORK=' "$OPS_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
+network_name="$(grep -E '^OPS_SHARED_NETWORK=' "$OPS_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
 if [ -z "$network_name" ]; then
-  network_name="cv_shared"
+  network_name="platform_ops_shared"
 fi
 
 docker network create "$network_name" >/dev/null 2>&1 || true

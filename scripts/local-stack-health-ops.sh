@@ -29,17 +29,31 @@ check_status() {
   fi
 }
 
+check_running_service() {
+  local service="$1"
+  if printf '%s\n' "$running_services" | grep -qx "$service"; then
+    echo "[OK] $service container is running"
+  else
+    echo "[FAIL] $service container is not running"
+    failed=1
+  fi
+}
+
 echo "Container status:"
 docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" ps || failed=1
+running_services="$(docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" ps --services --status running || true)"
+
+echo
+echo "Service checks (internal only):"
+check_running_service "prometheus"
+check_running_service "jaeger"
 
 echo
 echo "HTTP checks:"
 check_status "OpenBao" "http://localhost:8200/v1/sys/health" '^(200|429)$'
-check_status "Prometheus" "http://localhost:9090/-/ready" '^200$'
 check_status "Alertmanager" "http://localhost:9093/-/ready" '^200$'
 check_status "Grafana" "http://localhost:3002/api/health" '^200$'
 check_status "Loki" "http://localhost:3100/ready" '^200$'
-check_status "Jaeger" "http://localhost:16686" '^200$'
 
 # Tolgee may expose either /healthz or /api/healthz depending on version/config.
 tolgee_code="$(curl -s -o /tmp/platform-ops-health-body.txt -w '%{http_code}' http://localhost:8090/healthz || true)"

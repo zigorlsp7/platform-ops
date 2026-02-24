@@ -110,3 +110,8 @@ bash ./scripts/ops-port-forward-all.sh --only grafana,tolgee
 ```
 
 Press `Ctrl+C` to close all tunnels.
+
+Notes:
+
+- Tolgee login is controlled by `docker/tolgee/config.yaml` and auth env vars (`TOLGEE_*`).
+- Jaeger and Prometheus UIs are not exposed; use Grafana for traces and metrics visualization.
