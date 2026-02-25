@@ -9,7 +9,7 @@ OPS_COMPOSE_FILE="${OPS_COMPOSE_FILE:-$REPO_ROOT/docker/compose.ops.local.yml}"
 OPENBAO_LOCAL_ADDR="${OPENBAO_LOCAL_ADDR:-http://localhost:8200}"
 
 if [ ! -f "$OPS_ENV_FILE" ]; then
-  echo "Missing $OPS_ENV_FILE. Create it and fill required values." >&2
+  echo "Missing $OPS_ENV_FILE. Copy docker/.env.ops.local.example to docker/.env.ops.local and fill required values." >&2
   exit 1
 fi
 

@@ -4,7 +4,6 @@
 *.tfstate.*
 *.plan
 *.tfplan
-.terraform.lock.hcl
 **/environments/*.tfvars
 !**/environments/*.tfvars.example
 
@@ -15,7 +14,7 @@ node_modules/
 .env
 .env.*
 !*.example
-!docker/.env.ops.local
+!docker/.env.ops.local.example
 !docker/.env.ops.prod
 
 # OS/editor

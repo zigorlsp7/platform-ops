@@ -1,16 +1,11 @@
 # Terraform Layout
 
-This repository currently has two Terraform tracks:
+Active Terraform modules in this repository:
 
-1. `infra/terraform/aws-compose` (recommended)
-- Provisions AWS infrastructure for this repo's current production model: one EC2 host running split compose stacks.
-- Works with `.github/workflows/deploy.yml` release deployment flow.
+1. `infra/terraform/bootstrap`
+- Creates backend primitives (for example, S3 state bucket) for Terraform state management.
 
-2. `infra/terraform` root files (legacy ECS skeleton)
-- Kept for reference from earlier architecture exploration.
+2. `infra/terraform/aws-compose`
+- Provisions AWS infrastructure for the compose-based runtime model used by `platform-ops`.
 
-If you are deploying the current app as-is, use `aws-compose`.
-
-Also available:
-
-- `infra/terraform/bootstrap` for creating an S3 backend bucket for Terraform state.
+For current production use, `aws-compose` is the primary infrastructure module.

@@ -23,8 +23,6 @@ Domain routing for specific applications is intentionally handled outside this m
 - `outputs.tf` values to wire into GitHub
 - `templates/user-data.sh.tftpl` EC2 bootstrap
 - `environments/prod.tfvars.example` starter values
-- `environments/prod.route53.tfvars.example` legacy alias (same baseline)
-- `environments/prod.cloudflare.tfvars.example` legacy alias (same baseline)
 
 ## 1. Initialize Terraform
 
@@ -66,8 +64,8 @@ Use those outputs to configure GitHub Environment `production` variables/secrets
 
 Use:
 
-- `scripts/aws-ssm-sync-env.sh`
 - `scripts/prod-deploy-remote.sh`
 - `docs/deploy-aws-terraform.md`
+- `docs/manual-aws-operations.md`
 
 for operational setup and release automation.

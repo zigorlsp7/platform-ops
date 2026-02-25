@@ -8,6 +8,19 @@ Shared operations and infrastructure repository for platform services.
 - Ops Docker stack (OpenBao, Prometheus, Grafana, Loki, Tolgee, OTel, Alertmanager, Jaeger)
 - Deployment orchestration workflows and scripts
 
+## Docker Config Layout
+
+Service configs are grouped under per-service folders in `docker/`:
+
+- `docker/alertmanager/`
+- `docker/grafana/`
+- `docker/loki/`
+- `docker/openbao/`
+- `docker/otel/`
+- `docker/prometheus/`
+- `docker/tolgee/`
+
+
 ## Husky Commit Checks
 
 This repo uses Husky + Node scripts for local quality gates.
@@ -52,8 +65,9 @@ brew install gitleaks
 From repo root:
 
 ```bash
+cp docker/.env.ops.local.example docker/.env.ops.local
+# edit docker/.env.ops.local
 bash ./scripts/local-stack-up-ops.sh
-bash ./scripts/local-stack-health-ops.sh
 ```
 
 Stop:
@@ -80,13 +94,11 @@ Runbook: `docs/ops-runbook.md`.
 
 ## Ops UI Access (Private via SSM)
 
-Start all UI tunnels in one command:
+Use manual commands in:
 
-```bash
-bash ./scripts/ops-port-forward-all.sh
-```
+- `docs/manual-aws-operations.md`
 
-Default local URLs:
+Default local URLs once tunnels are open:
 
 - OpenBao: `http://127.0.0.1:18200`
 - Grafana: `http://127.0.0.1:13000`
@@ -98,13 +110,6 @@ Notes:
 - Prometheus and Jaeger UIs are not exposed; use Grafana for metrics and traces.
 - Alert status is available in Grafana via the Alertmanager datasource.
 
-Examples:
-
-```bash
-bash ./scripts/ops-port-forward-all.sh --only grafana,tolgee
-bash ./scripts/ops-port-forward-all.sh --instance-id i-xxxxxxxxxxxxxxxxx
-```
-
 ## Release Automation
 
 - `.github/workflows/release-please.yml` runs on pushes to `main` and updates/creates the Release PR.
@@ -114,4 +119,3 @@ bash ./scripts/ops-port-forward-all.sh --instance-id i-xxxxxxxxxxxxxxxxx
 - Required secret for Release Please: `RELEASE_PLEASE_TOKEN` (PAT with `contents:write` and `pull_requests:write`; do not use `GITHUB_TOKEN`).
 - Required secret for auto-approval/auto-merge: `RELEASE_PLEASE_APPROVER_TOKEN` (PAT with `pull_requests:write`; must be a different identity than `RELEASE_PLEASE_TOKEN`).
 - In repository settings, enable `Allow auto-merge` (Settings -> General -> Pull Requests).
-
