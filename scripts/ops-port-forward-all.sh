@@ -14,8 +14,6 @@ TUNNELS=(
   "openbao:8200:18200:http://127.0.0.1:18200"
   "grafana:3000:13000:http://127.0.0.1:13000"
   "tolgee:8080:18080:http://127.0.0.1:18080"
-  "jaeger:16686:16686:http://127.0.0.1:16686"
-  "prometheus:9090:19090:http://127.0.0.1:19090"
   "alertmanager:9093:19093:http://127.0.0.1:19093"
   "loki:3100:13100:http://127.0.0.1:13100"
 )
@@ -31,7 +29,7 @@ Options:
   --only <csv>            Comma-separated service list (e.g. grafana,tolgee)
   -h, --help              Show help
 
-Services: openbao,grafana,tolgee,jaeger,prometheus,alertmanager,loki
+Services: openbao,grafana,tolgee,alertmanager,loki
 USAGE
 }
 

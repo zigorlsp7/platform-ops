@@ -91,10 +91,13 @@ Default local URLs:
 - OpenBao: `http://127.0.0.1:18200`
 - Grafana: `http://127.0.0.1:13000`
 - Tolgee: `http://127.0.0.1:18080`
-- Jaeger: `http://127.0.0.1:16686`
-- Prometheus: `http://127.0.0.1:19090`
 - Alertmanager: `http://127.0.0.1:19093`
 - Loki: `http://127.0.0.1:13100`
+
+Notes:
+
+- Tolgee auth depends on `docker/tolgee/config.yaml` plus `spring.config.additional-location` in compose (configured in this repo).
+- Prometheus and Jaeger UIs are not exposed; use Grafana for metrics and traces.
 
 Examples:
 

@@ -4,11 +4,7 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:1.53
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:16686:16686"
-      - "127.0.0.1:4317:4317"
-      - "127.0.0.1:4318:4318"
-    networks: [cv_shared]
+    networks: [ops_shared]
 
   otel-collector:
     image: otel/opentelemetry-collector:0.98.0
@@ -18,7 +14,7 @@ services:
       - ../docker/otel-collector-config.yml:/etc/otelcol/config.yml:ro
     depends_on:
       - jaeger
-    networks: [cv_shared]
+    networks: [ops_shared]
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
@@ -29,7 +25,7 @@ services:
       - ../docker/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     ports:
       - "127.0.0.1:9093:9093"
-    networks: [cv_shared]
+    networks: [ops_shared]
 
   prometheus:
     image: prom/prometheus:v2.51.2
@@ -41,11 +37,9 @@ services:
       - ../docker/prometheus.rules.yml:/etc/prometheus/prometheus.rules.yml:ro
       - ../docker/prometheus.alerts.yml:/etc/prometheus/prometheus.alerts.yml:ro
       - ops-prod-prometheus-data:/prometheus
-    ports:
-      - "127.0.0.1:9090:9090"
     depends_on:
       - alertmanager
-    networks: [cv_shared]
+    networks: [ops_shared]
 
   grafana:
     image: grafana/grafana:10.4.2
@@ -61,7 +55,7 @@ services:
       - ../docker/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
-    networks: [cv_shared]
+    networks: [ops_shared]
 
   loki:
     image: grafana/loki:2.9.8
@@ -72,23 +66,29 @@ services:
     volumes:
       - ../docker/loki/config.yml:/etc/loki/config.yml:ro
       - ops-prod-loki-data:/loki
-    networks: [cv_shared]
+    networks: [ops_shared]
 
   tolgee:
     image: tolgee/tolgee:v3.141.1
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"
+    environment:
+      spring.config.additional-location: file:///config.yaml
+      TOLGEE_AUTHENTICATION_ENABLED: ${TOLGEE_AUTHENTICATION_ENABLED:?TOLGEE_AUTHENTICATION_ENABLED is required}
+      TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED: ${TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED:?TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED is required}
+      TOLGEE_INITIAL_USERNAME: ${TOLGEE_INITIAL_USERNAME:?TOLGEE_INITIAL_USERNAME is required}
+      TOLGEE_INITIAL_PASSWORD: ${TOLGEE_INITIAL_PASSWORD:?TOLGEE_INITIAL_PASSWORD is required}
+      TOLGEE_JWT_SECRET: ${TOLGEE_JWT_SECRET:?TOLGEE_JWT_SECRET is required}
     volumes:
       - ops-prod-tolgee-data:/data
       - ./tolgee/config.yaml:/config.yaml:ro
-    command: ["--config=/config.yaml"]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz >/dev/null 2>&1 || wget -qO- http://localhost:8080/api/healthz >/dev/null 2>&1"]
       interval: 5s
       timeout: 3s
       retries: 30
-    networks: [cv_shared]
+    networks: [ops_shared]
 
   openbao:
     image: openbao/openbao:latest
@@ -101,11 +101,11 @@ services:
     volumes:
       - ../docker/openbao/prod.hcl:/openbao/config/prod.hcl:ro
       - ops-prod-openbao-data:/openbao/data
-    networks: [cv_shared]
+    networks: [ops_shared]
 
 networks:
-  cv_shared:
-    name: ${CV_SHARED_NETWORK:?CV_SHARED_NETWORK is required}
+  ops_shared:
+    name: ${OPS_SHARED_NETWORK:?OPS_SHARED_NETWORK is required}
     external: true
 
 volumes:

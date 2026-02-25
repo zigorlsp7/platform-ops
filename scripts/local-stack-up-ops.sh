@@ -38,9 +38,9 @@ if [ -z "${openbao_kv_mount:-}" ]; then
   exit 1
 fi
 
-network_name="$(read_env_var_from_file "$OPS_ENV_FILE" "CV_SHARED_NETWORK")"
+network_name="$(read_env_var_from_file "$OPS_ENV_FILE" "OPS_SHARED_NETWORK")"
 if [ -z "$network_name" ]; then
-  network_name="cv_shared"
+  network_name="platform_ops_shared"
 fi
 
 docker network create "$network_name" >/dev/null 2>&1 || true
