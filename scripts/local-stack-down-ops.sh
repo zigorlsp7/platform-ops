@@ -22,6 +22,17 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+if [ ! -f "$OPS_ENV_FILE" ]; then
+  echo "Missing $OPS_ENV_FILE. Copy docker/.env.ops.local.example to docker/.env.ops.local and fill required values." >&2
+  exit 1
+fi
+
+# Keep local startup/shutdown symmetric: load local env file into shell scope.
+set -a
+# shellcheck disable=SC1090
+source "$OPS_ENV_FILE"
+set +a
+
 args=(down --remove-orphans)
 if [ "$REMOVE_VOLUMES" = "true" ]; then
   args+=(--volumes)

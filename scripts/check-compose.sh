@@ -15,7 +15,17 @@ local_env_tmp="$(mktemp)"
 prod_env_tmp="$(mktemp)"
 trap 'rm -f "$local_tmp" "$prod_tmp" "$local_env_tmp" "$prod_env_tmp"' EXIT
 
-cp "$REPO_ROOT/docker/.env.ops.local" "$local_env_tmp"
+local_env_source="$REPO_ROOT/docker/.env.ops.local"
+if [ ! -f "$local_env_source" ]; then
+  local_env_source="$REPO_ROOT/docker/.env.ops.local.example"
+fi
+
+if [ ! -f "$local_env_source" ]; then
+  echo "Missing local ops env template (.env.ops.local or .env.ops.local.example)." >&2
+  exit 1
+fi
+
+cp "$local_env_source" "$local_env_tmp"
 cp "$REPO_ROOT/docker/.env.ops.prod" "$prod_env_tmp"
 
 # Ensure external shell env does not override values from --env-file during validation.
@@ -68,13 +78,6 @@ set_key_if_missing_or_empty() {
   fi
 }
 
-# Backward compatibility for old local env key name.
-if [ -z "$(awk -F= '$1 == "OPS_SHARED_NETWORK" {print $0}' "$local_env_tmp" | tail -n1)" ]; then
-  legacy_cv_shared="$(awk -F= '$1 == "CV_SHARED_NETWORK" {print $2}' "$local_env_tmp" | tail -n1)"
-  if [ -n "$legacy_cv_shared" ]; then
-    echo "OPS_SHARED_NETWORK=$legacy_cv_shared" >> "$local_env_tmp"
-  fi
-fi
 
 # Required keys for local compose validation.
 set_key_if_missing_or_empty "$local_env_tmp" "OPS_SHARED_NETWORK" "platform_ops_shared"

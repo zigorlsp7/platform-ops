@@ -1,5 +1,5 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 5s
 
 alerting:
   alertmanagers:
@@ -7,11 +7,10 @@ alerting:
         - targets: ["alertmanager:9093"]
 
 scrape_configs:
-  - job_name: "cv-api"
+  - job_name: "platform-app-api"
     metrics_path: /metrics
-    scheme: https
     static_configs:
-      - targets: ["api.example.com"]
+      - targets: ["api:3000"]
 
 rule_files:
   - /etc/prometheus/prometheus.rules.yml

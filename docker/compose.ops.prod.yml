@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
     command: ["--config=/etc/otelcol/config.yml"]
     volumes:
-      - ../docker/otel-collector-config.yml:/etc/otelcol/config.yml:ro
+      - ./otel/config.yml:/etc/otelcol/config.yml:ro
     depends_on:
       - jaeger
     networks: [ops_shared]
@@ -22,7 +22,7 @@ services:
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
     volumes:
-      - ../docker/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/config.prod.yml:/etc/alertmanager/alertmanager.yml:ro
     networks: [ops_shared]
 
   prometheus:
@@ -31,9 +31,9 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
-      - ../docker/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
-      - ../docker/prometheus.rules.yml:/etc/prometheus/prometheus.rules.yml:ro
-      - ../docker/prometheus.alerts.yml:/etc/prometheus/prometheus.alerts.yml:ro
+      - ./prometheus/config.prod.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules.yml:/etc/prometheus/prometheus.rules.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/prometheus.alerts.yml:ro
       - ops-prod-prometheus-data:/prometheus
     depends_on:
       - alertmanager
@@ -89,7 +89,7 @@ services:
     networks: [ops_shared]
 
   openbao:
-    image: openbao/openbao:latest
+    image: openbao/openbao:2.5.0
     restart: unless-stopped
     cap_add:
       - IPC_LOCK

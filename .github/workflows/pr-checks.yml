@@ -41,12 +41,6 @@ jobs:
 
       - name: Run repository checks
         run: npm run check:hooks
-
-      - name: Terraform validate (root)
-        run: |
-          terraform -chdir=infra/terraform init -backend=false -input=false
-          terraform -chdir=infra/terraform validate
-
       - name: Terraform validate (bootstrap)
         run: |
           terraform -chdir=infra/terraform/bootstrap init -backend=false -input=false

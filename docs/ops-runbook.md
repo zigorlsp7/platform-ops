@@ -13,6 +13,8 @@ npm run check:hooks
 
 ```bash
 cd <path-to-platform-ops>
+cp docker/.env.ops.local.example docker/.env.ops.local
+# edit docker/.env.ops.local
 bash ./scripts/local-stack-up-ops.sh
 ```
 
@@ -21,21 +23,13 @@ Expected:
 - OpenBao becomes ready.
 - KV mount from `OPENBAO_KV_MOUNT` exists (or is auto-created as KV v2).
 
-## 2. Local health verification
+## 2. Local sanity check
 
 ```bash
-bash ./scripts/local-stack-health-ops.sh
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml ps
 ```
 
-Expected all `[OK]` for:
-
-- OpenBao
-- Prometheus
-- Alertmanager
-- Grafana
-- Loki
-- Tolgee
-- Jaeger
+Expected: core services show as `Up` (OpenBao, Prometheus, Grafana, Loki, Tolgee, Alertmanager, Jaeger).
 
 ## 3. Local shutdown
 
@@ -49,17 +43,22 @@ Fully clean local reset:
 bash ./scripts/local-stack-down-ops.sh --volumes
 ```
 
-## 4. Prepare production SSM values
+## 4. Prepare production runtime config
 
-Source of truth for runtime ops config is SSM path (example `/platform-ops/prod/ops`).
+Production runtime uses a split model:
 
-```bash
-./scripts/aws-ssm-sync-env.sh \
-  --file docker/.env.ops.prod \
-  --prefix /platform-ops/prod/ops \
-  --region eu-west-1 \
-  --secure-keys GRAFANA_ADMIN_PASSWORD
-```
+- Non-secrets: `docker/.env.ops.prod` (bundled with the release)
+- Secrets: AWS SSM Parameter Store under `AWS_SSM_OPS_PREFIX` (example `/platform-ops/prod/ops`)
+
+Required secret keys in SSM:
+
+- `GRAFANA_ADMIN_PASSWORD`
+- `TOLGEE_INITIAL_PASSWORD`
+- `TOLGEE_JWT_SECRET`
+
+Manual SSM steps are documented in:
+
+- `docs/manual-aws-operations.md`
 
 ## 5. Deploy ops on production
 
@@ -95,21 +94,11 @@ docker compose --env-file docker/.env.ops.prod -f docker/compose.ops.prod.yml ps
 - `permission denied` for OpenBao data:
   - run deploy again after the script adjusts OpenBao volume permissions.
 
-## 8. Access Ops UIs with one command
+## 8. Access Ops UIs (manual SSM tunnels)
 
-From repo root:
+Follow:
 
-```bash
-bash ./scripts/ops-port-forward-all.sh
-```
-
-Optional: only specific services:
-
-```bash
-bash ./scripts/ops-port-forward-all.sh --only grafana,tolgee
-```
-
-Press `Ctrl+C` to close all tunnels.
+- `docs/manual-aws-operations.md`
 
 Notes:
 

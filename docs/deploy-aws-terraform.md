@@ -5,7 +5,7 @@ This guide is intentionally scoped to `platform-ops` only.
 It covers:
 
 1. Terraform infrastructure provisioning.
-2. SSM configuration for ops runtime env.
+2. SSM configuration for ops runtime secrets.
 3. GitHub Actions setup for production ops deployment.
 
 For day-to-day local/prod execution steps, use `docs/ops-runbook.md`.
@@ -82,19 +82,22 @@ In repository `platform-ops`:
 - `AWS_DEPLOY_INSTANCE_ID`
 - `AWS_SSM_OPS_PREFIX`
 
-## 6. Configure production ops env values in SSM
+## 6. Configure production runtime values
 
-Template file: `docker/.env.ops.prod`
+Runtime model used by deploy script:
 
-Upload:
+- Non-secrets: read from `docker/.env.ops.prod` in the release bundle
+- Secrets: fetched from SSM prefix `AWS_SSM_OPS_PREFIX`
 
-```bash
-./scripts/aws-ssm-sync-env.sh \
-  --file docker/.env.ops.prod \
-  --prefix /platform-ops/prod/ops \
-  --region <your-region> \
-  --secure-keys GRAFANA_ADMIN_PASSWORD
-```
+Required secrets in SSM:
+
+- `GRAFANA_ADMIN_PASSWORD`
+- `TOLGEE_INITIAL_PASSWORD`
+- `TOLGEE_JWT_SECRET`
+
+Manual SSM steps are documented in:
+
+- `docs/manual-aws-operations.md`
 
 ## 7. Deploy ops stack via GitHub Actions
 
