@@ -8,43 +8,37 @@ OPS_ENV_FILE="${OPS_ENV_FILE:-$REPO_ROOT/docker/.env.ops.local}"
 OPS_COMPOSE_FILE="${OPS_COMPOSE_FILE:-$REPO_ROOT/docker/compose.ops.local.yml}"
 OPENBAO_LOCAL_ADDR="${OPENBAO_LOCAL_ADDR:-http://localhost:8200}"
 
-read_env_var_from_file() {
-  local file="$1"
-  local key="$2"
-  local line
-  line="$(grep -E "^${key}=" "$file" | tail -n1 || true)"
-  if [ -z "${line:-}" ]; then
-    printf ''
-    return
-  fi
-  printf '%s' "${line#*=}"
-}
-
 if [ ! -f "$OPS_ENV_FILE" ]; then
   echo "Missing $OPS_ENV_FILE. Create it and fill required values." >&2
   exit 1
 fi
 
-openbao_dev_root_token="$(read_env_var_from_file "$OPS_ENV_FILE" "OPENBAO_DEV_ROOT_TOKEN")"
-openbao_kv_mount="$(read_env_var_from_file "$OPS_ENV_FILE" "OPENBAO_KV_MOUNT")"
+# Use .env.ops.local as the single local source of truth.
+set -a
+# shellcheck disable=SC1090
+source "$OPS_ENV_FILE"
+set +a
 
-if [ -z "${openbao_dev_root_token:-}" ]; then
-  echo "OPENBAO_DEV_ROOT_TOKEN is required in $OPS_ENV_FILE" >&2
-  exit 1
-fi
+require_env() {
+  local key="$1"
+  local value="${!key:-}"
+  if [ -z "$value" ]; then
+    echo "$key is required in $OPS_ENV_FILE" >&2
+    exit 1
+  fi
+}
 
-if [ -z "${openbao_kv_mount:-}" ]; then
-  echo "OPENBAO_KV_MOUNT is required in $OPS_ENV_FILE" >&2
-  exit 1
-fi
+require_env "OPENBAO_DEV_ROOT_TOKEN"
+require_env "OPENBAO_KV_MOUNT"
 
-network_name="$(read_env_var_from_file "$OPS_ENV_FILE" "OPS_SHARED_NETWORK")"
-if [ -z "$network_name" ]; then
-  network_name="platform_ops_shared"
-fi
+network_name="${OPS_SHARED_NETWORK:-platform_ops_shared}"
+
+compose_ops() {
+  docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" "$@"
+}
 
 docker network create "$network_name" >/dev/null 2>&1 || true
-docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" up -d
+compose_ops up -d
 
 echo "Waiting for OpenBao to become ready..."
 i=1
@@ -59,12 +53,12 @@ done
 
 if [ $i -gt 60 ]; then
   echo "OpenBao did not become ready in time" >&2
-  docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" logs --no-color --tail=120 openbao || true
+  compose_ops logs --no-color --tail=120 openbao || true
   exit 1
 fi
 
-mount_path="${openbao_kv_mount%/}"
-mounts_json="$(curl -fsS -H "X-Vault-Token: $openbao_dev_root_token" "$OPENBAO_LOCAL_ADDR/v1/sys/mounts")"
+mount_path="${OPENBAO_KV_MOUNT%/}"
+mounts_json="$(curl -fsS -H "X-Vault-Token: $OPENBAO_DEV_ROOT_TOKEN" "$OPENBAO_LOCAL_ADDR/v1/sys/mounts")"
 if ! MOUNT_PATH="$mount_path" node -e '
 const fs = require("node:fs");
 const mounts = JSON.parse(fs.readFileSync(0, "utf8"));
@@ -73,7 +67,7 @@ process.exit(Object.prototype.hasOwnProperty.call(mounts, mountPath) ? 0 : 1);
 ' <<<"$mounts_json"; then
   echo "OpenBao mount '$mount_path' does not exist. Creating kv-v2 mount..."
   curl -fsS \
-    -H "X-Vault-Token: $openbao_dev_root_token" \
+    -H "X-Vault-Token: $OPENBAO_DEV_ROOT_TOKEN" \
     -H "Content-Type: application/json" \
     -X POST \
     --data '{"type":"kv","options":{"version":"2"}}' \

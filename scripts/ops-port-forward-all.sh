@@ -14,8 +14,6 @@ TUNNELS=(
   "openbao:8200:18200:http://127.0.0.1:18200"
   "grafana:3000:13000:http://127.0.0.1:13000"
   "tolgee:8080:18080:http://127.0.0.1:18080"
-  "alertmanager:9093:19093:http://127.0.0.1:19093"
-  "loki:3100:13100:http://127.0.0.1:13100"
 )
 
 usage() {
@@ -29,7 +27,7 @@ Options:
   --only <csv>            Comma-separated service list (e.g. grafana,tolgee)
   -h, --help              Show help
 
-Services: openbao,grafana,tolgee,alertmanager,loki
+Services: openbao,grafana,tolgee
 USAGE
 }
 

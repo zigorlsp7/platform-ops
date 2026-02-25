@@ -115,3 +115,4 @@ Notes:
 
 - Tolgee login is controlled by `docker/tolgee/config.yaml` and auth env vars (`TOLGEE_*`).
 - Jaeger and Prometheus UIs are not exposed; use Grafana for traces and metrics visualization.
+- Alertmanager UI is also not exposed; use Grafana Alerting (Alertmanager datasource).
