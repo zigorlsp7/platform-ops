@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.2](https://github.com/zigorlsp7/platform-ops/compare/v1.0.1...v1.0.2) (2026-02-25)
+
+
+### Bug Fixes
+
+* add placeholder ([0782054](https://github.com/zigorlsp7/platform-ops/commit/078205466ab3469cb7ef558920705cbeae7f5bf9))
+* add placeholder ([75f7052](https://github.com/zigorlsp7/platform-ops/commit/75f7052e79c42acdd06d58ddf77216ed48c5c279))
+* add placeholder ([9ef9efd](https://github.com/zigorlsp7/platform-ops/commit/9ef9efd5cfec0c163bcf0b44c5721e5f9cd630e9))
+* add placeholder ([28a0e6c](https://github.com/zigorlsp7/platform-ops/commit/28a0e6cf2c5cdb282371e428068af23c2470eba0))
+* security issues ([2227d31](https://github.com/zigorlsp7/platform-ops/commit/2227d31c9a07c94c5434836c465c5a72b45ea6da))
+* security issues ([5066d2f](https://github.com/zigorlsp7/platform-ops/commit/5066d2f014af486c4eb9885a52ded9f6da2cdf36))
+
 ## [1.0.1](https://github.com/zigorlsp7/platform-ops/compare/v1.0.0...v1.0.1) (2026-02-24)
 
 
