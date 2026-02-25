@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3](https://github.com/zigorlsp7/platform-ops/compare/v1.0.2...v1.0.3) (2026-02-25)
+
+
+### Bug Fixes
+
+* empty stuff to trigger a new release ([93f7e94](https://github.com/zigorlsp7/platform-ops/commit/93f7e942773a4978a9e9022079d5f0acfabe4340))
+* trigger release please ([d4b911c](https://github.com/zigorlsp7/platform-ops/commit/d4b911c1bdae3b11f0f7d30b6cd6476e088cfa7e))
+
 ## [1.0.2](https://github.com/zigorlsp7/platform-ops/compare/v1.0.1...v1.0.2) (2026-02-25)
 
 
