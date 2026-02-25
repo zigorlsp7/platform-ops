@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/zigorlsp7/platform-ops/compare/v1.0.4...v1.1.0) (2026-02-25)
+
+
+### Features
+
+* **ops:** centralize alerting UI in Grafana ([bb7729b](https://github.com/zigorlsp7/platform-ops/commit/bb7729b3396a2bebe78522120ca6be6a82e0b89a))
+* **ops:** centralize alerting UI in Grafana ([18a5279](https://github.com/zigorlsp7/platform-ops/commit/18a52795ef13945260201dd43eb400b689df1135))
+
 ## [1.0.4](https://github.com/zigorlsp7/platform-ops/compare/v1.0.3...v1.0.4) (2026-02-25)
 
 
