@@ -251,33 +251,111 @@ fi
 
 cd "$RELEASE_DIR"
 
-OPS_ENV_FILE="docker/.env.ops.prod"
+OPS_BASE_ENV_FILE="docker/.env.ops.prod"
+OPS_ENV_FILE="$(mktemp /tmp/platform-ops-ops-env.XXXXXX)"
+trap 'rm -f "$OPS_ENV_FILE"' EXIT
 
-fetch_ssm_path_to_env_file() {
-  local prefix="$1"
-  local output_file="$2"
-  local response
-  local count
+if [ ! -f "$OPS_BASE_ENV_FILE" ]; then
+  echo "Missing base ops env file in release bundle: $OPS_BASE_ENV_FILE" >&2
+  exit 1
+fi
 
-  response="$(aws ssm get-parameters-by-path --region "$AWS_REGION" --path "$prefix" --recursive --with-decryption --output json)"
-  count="$(printf '%s' "$response" | jq '.Parameters | length')"
+cp "$OPS_BASE_ENV_FILE" "$OPS_ENV_FILE"
+chmod 600 "$OPS_ENV_FILE"
 
-  if [ "$count" -eq 0 ]; then
-    echo "No SSM parameters found under $prefix" >&2
+read_env_value() {
+  local env_file="$1"
+  local key="$2"
+  grep -E "^${key}=" "$env_file" | tail -n1 | cut -d'=' -f2- || true
+}
+
+require_env_value_in_file() {
+  local env_file="$1"
+  local key="$2"
+  local value
+
+  value="$(read_env_value "$env_file" "$key")"
+  if [ -z "$value" ]; then
+    echo "Missing required non-secret value '$key' in $env_file" >&2
+    exit 1
+  fi
+}
+
+upsert_env_value() {
+  local env_file="$1"
+  local key="$2"
+  local value="$3"
+  local tmp_file
+
+  tmp_file="$(mktemp)"
+  awk -F= -v k="$key" -v v="$value" '
+    BEGIN { replaced = 0 }
+    $1 == k {
+      if (!replaced) {
+        print k "=" v
+        replaced = 1
+      }
+      next
+    }
+    { print }
+    END {
+      if (!replaced) {
+        print k "=" v
+      }
+    }
+  ' "$env_file" > "$tmp_file"
+  mv "$tmp_file" "$env_file"
+}
+
+fetch_ssm_secret_value() {
+  local key="$1"
+  local parameter_name="${OPS_SSM_PREFIX%/}/$key"
+  local value
+
+  set +e
+  value="$(aws ssm get-parameter --region "$AWS_REGION" --name "$parameter_name" --with-decryption --query 'Parameter.Value' --output text 2>/tmp/platform-ops-ssm.err)"
+  rc=$?
+  set -e
+
+  if [ "$rc" -ne 0 ] || [ -z "$value" ] || [ "$value" = "None" ]; then
+    echo "Missing required secret in SSM: $parameter_name" >&2
+    if [ -s /tmp/platform-ops-ssm.err ]; then
+      cat /tmp/platform-ops-ssm.err >&2
+    fi
     exit 1
   fi
 
-  printf '%s' "$response" \
-    | jq -r '.Parameters | sort_by(.Name)[] | "\(.Name | split("/") | last)=\(.Value)"' > "$output_file"
-
-  chmod 600 "$output_file"
+  printf '%s' "$value"
 }
 
-fetch_ssm_path_to_env_file "$OPS_SSM_PREFIX" "$OPS_ENV_FILE"
+required_non_secret_keys=(
+  OPS_SHARED_NETWORK
+  GRAFANA_ADMIN_USER
+  GRAFANA_USERS_ALLOW_SIGN_UP
+  TOLGEE_AUTHENTICATION_ENABLED
+  TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED
+  TOLGEE_INITIAL_USERNAME
+)
 
+for key in "${required_non_secret_keys[@]}"; do
+  require_env_value_in_file "$OPS_ENV_FILE" "$key"
+done
+
+required_secret_keys=(
+  GRAFANA_ADMIN_PASSWORD
+  TOLGEE_INITIAL_PASSWORD
+  TOLGEE_JWT_SECRET
+)
+
+echo "[deploy] Loading required secrets from SSM prefix: $OPS_SSM_PREFIX"
+for key in "${required_secret_keys[@]}"; do
+  secret_value="$(fetch_ssm_secret_value "$key")"
+  upsert_env_value "$OPS_ENV_FILE" "$key" "$secret_value"
+done
 network_name="$(grep -E '^OPS_SHARED_NETWORK=' "$OPS_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
 if [ -z "$network_name" ]; then
-  network_name="platform_ops_shared"
+  echo "Missing required non-secret value 'OPS_SHARED_NETWORK' in $OPS_BASE_ENV_FILE" >&2
+  exit 1
 fi
 
 docker network create "$network_name" >/dev/null 2>&1 || true
