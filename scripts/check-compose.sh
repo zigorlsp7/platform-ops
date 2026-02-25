@@ -11,9 +11,11 @@ fi
 
 local_tmp="$(mktemp)"
 prod_tmp="$(mktemp)"
+local_env_tmp="$(mktemp)"
 prod_env_tmp="$(mktemp)"
-trap 'rm -f "$local_tmp" "$prod_tmp" "$prod_env_tmp"' EXIT
+trap 'rm -f "$local_tmp" "$prod_tmp" "$local_env_tmp" "$prod_env_tmp"' EXIT
 
+cp "$REPO_ROOT/docker/.env.ops.local" "$local_env_tmp"
 cp "$REPO_ROOT/docker/.env.ops.prod" "$prod_env_tmp"
 
 # Ensure external shell env does not override values from --env-file during validation.
@@ -34,41 +36,17 @@ for key in "${compose_vars[@]}"; do
   unset "$key" || true
 done
 
-# Prod runtime values are sourced from SSM during deployment, not from tracked env files.
-# For compose rendering checks, inject non-sensitive placeholders when required keys are missing/empty.
-required_prod_keys=(
-  OPS_SHARED_NETWORK
-  GRAFANA_ADMIN_USER
-  GRAFANA_ADMIN_PASSWORD
-  GRAFANA_USERS_ALLOW_SIGN_UP
-  TOLGEE_AUTHENTICATION_ENABLED
-  TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED
-  TOLGEE_INITIAL_USERNAME
-  TOLGEE_INITIAL_PASSWORD
-  TOLGEE_JWT_SECRET
-)
+set_key_if_missing_or_empty() {
+  local env_file="$1"
+  local key="$2"
+  local value="$3"
+  local current_line
+  local current_value
 
-placeholder_for_key() {
-  local key="$1"
-  case "$key" in
-    GRAFANA_USERS_ALLOW_SIGN_UP|TOLGEE_AUTHENTICATION_ENABLED|TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED)
-      echo "false"
-      ;;
-    OPS_SHARED_NETWORK)
-      echo "platform_ops_shared"
-      ;;
-    *)
-      echo "__placeholder_for_compose_validation__"
-      ;;
-  esac
-}
-
-for key in "${required_prod_keys[@]}"; do
-  current_line="$(awk -F= -v k="$key" '$1 == k {line=$0} END {print line}' "$prod_env_tmp")"
+  current_line="$(awk -F= -v k="$key" '$1 == k {line=$0} END {print line}' "$env_file")"
   current_value="${current_line#*=}"
 
   if [ -z "$current_line" ] || [ -z "$current_value" ]; then
-    value="$(placeholder_for_key "$key")"
     tmp_rewrite="$(mktemp)"
     awk -F= -v k="$key" -v v="$value" '
       BEGIN { replaced = 0 }
@@ -85,12 +63,44 @@ for key in "${required_prod_keys[@]}"; do
           print k "=" v
         }
       }
-    ' "$prod_env_tmp" > "$tmp_rewrite"
-    mv "$tmp_rewrite" "$prod_env_tmp"
+    ' "$env_file" > "$tmp_rewrite"
+    mv "$tmp_rewrite" "$env_file"
   fi
-done
+}
 
-docker compose --env-file "$REPO_ROOT/docker/.env.ops.local" -f "$REPO_ROOT/docker/compose.ops.local.yml" config > "$local_tmp"
+# Backward compatibility for old local env key name.
+if [ -z "$(awk -F= '$1 == "OPS_SHARED_NETWORK" {print $0}' "$local_env_tmp" | tail -n1)" ]; then
+  legacy_cv_shared="$(awk -F= '$1 == "CV_SHARED_NETWORK" {print $2}' "$local_env_tmp" | tail -n1)"
+  if [ -n "$legacy_cv_shared" ]; then
+    echo "OPS_SHARED_NETWORK=$legacy_cv_shared" >> "$local_env_tmp"
+  fi
+fi
+
+# Required keys for local compose validation.
+set_key_if_missing_or_empty "$local_env_tmp" "OPS_SHARED_NETWORK" "platform_ops_shared"
+set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_ADMIN_USER" "admin"
+set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_ADMIN_PASSWORD" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_USERS_ALLOW_SIGN_UP" "false"
+set_key_if_missing_or_empty "$local_env_tmp" "OPENBAO_DEV_ROOT_TOKEN" "dev-only-root-token-change-me"
+set_key_if_missing_or_empty "$local_env_tmp" "OPENBAO_DEV_LISTEN_ADDRESS" "0.0.0.0:8200"
+set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_AUTHENTICATION_ENABLED" "true"
+set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED" "false"
+set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_INITIAL_USERNAME" "platform_ops_admin"
+set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_INITIAL_PASSWORD" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_JWT_SECRET" "__placeholder_for_compose_validation__"
+
+# Required keys for prod compose validation.
+set_key_if_missing_or_empty "$prod_env_tmp" "OPS_SHARED_NETWORK" "platform_ops_shared"
+set_key_if_missing_or_empty "$prod_env_tmp" "GRAFANA_ADMIN_USER" "platform_ops_admin"
+set_key_if_missing_or_empty "$prod_env_tmp" "GRAFANA_ADMIN_PASSWORD" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$prod_env_tmp" "GRAFANA_USERS_ALLOW_SIGN_UP" "false"
+set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_AUTHENTICATION_ENABLED" "true"
+set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED" "false"
+set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_INITIAL_USERNAME" "platform_ops_admin"
+set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_INITIAL_PASSWORD" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_JWT_SECRET" "__placeholder_for_compose_validation__"
+
+docker compose --env-file "$local_env_tmp" -f "$REPO_ROOT/docker/compose.ops.local.yml" config > "$local_tmp"
 docker compose --env-file "$prod_env_tmp" -f "$REPO_ROOT/docker/compose.ops.prod.yml" config > "$prod_tmp"
 
 echo "Compose config render passed (local + prod)."
