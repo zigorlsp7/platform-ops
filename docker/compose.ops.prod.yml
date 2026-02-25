@@ -23,8 +23,6 @@ services:
       - --config.file=/etc/alertmanager/alertmanager.yml
     volumes:
       - ../docker/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-    ports:
-      - "127.0.0.1:9093:9093"
     networks: [ops_shared]
 
   prometheus:
