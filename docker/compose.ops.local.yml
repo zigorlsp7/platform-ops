@@ -95,12 +95,12 @@ services:
     restart: unless-stopped
     cap_add:
       - IPC_LOCK
-    environment:
-      BAO_DEV_ROOT_TOKEN_ID: ${OPENBAO_DEV_ROOT_TOKEN:?OPENBAO_DEV_ROOT_TOKEN is required}
-      BAO_DEV_LISTEN_ADDRESS: ${OPENBAO_DEV_LISTEN_ADDRESS:?OPENBAO_DEV_LISTEN_ADDRESS is required}
-    command: ["server", "-dev"]
+    command: ["server", "-config=/etc/openbao/prod.hcl"]
     ports:
       - "8200:8200"
+    volumes:
+      - ../docker/openbao/prod.hcl:/etc/openbao/prod.hcl:ro
+      - ops-local-openbao-data:/openbao/data
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8200/v1/sys/health >/dev/null"]
       interval: 5s
@@ -117,3 +117,4 @@ volumes:
   ops-local-grafana-data:
   ops-local-loki-data:
   ops-local-tolgee-data:
+  ops-local-openbao-data:

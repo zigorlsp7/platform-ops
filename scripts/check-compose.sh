@@ -34,8 +34,6 @@ compose_vars=(
   GRAFANA_ADMIN_USER
   GRAFANA_ADMIN_PASSWORD
   GRAFANA_USERS_ALLOW_SIGN_UP
-  OPENBAO_DEV_ROOT_TOKEN
-  OPENBAO_DEV_LISTEN_ADDRESS
   TOLGEE_AUTHENTICATION_ENABLED
   TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED
   TOLGEE_INITIAL_USERNAME
@@ -84,8 +82,6 @@ set_key_if_missing_or_empty "$local_env_tmp" "OPS_SHARED_NETWORK" "platform_ops_
 set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_ADMIN_USER" "admin"
 set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_ADMIN_PASSWORD" "__placeholder_for_compose_validation__"
 set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_USERS_ALLOW_SIGN_UP" "false"
-set_key_if_missing_or_empty "$local_env_tmp" "OPENBAO_DEV_ROOT_TOKEN" "dev-only-root-token-change-me"
-set_key_if_missing_or_empty "$local_env_tmp" "OPENBAO_DEV_LISTEN_ADDRESS" "0.0.0.0:8200"
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_AUTHENTICATION_ENABLED" "true"
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED" "false"
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_INITIAL_USERNAME" "platform_ops_admin"
