@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/zigorlsp7/platform-ops/compare/v1.1.0...v1.1.1) (2026-02-26)
+
+
+### Bug Fixes
+
+* adapt code for cv-web integration ([e95878b](https://github.com/zigorlsp7/platform-ops/commit/e95878ba3dc2095cdc8d308480cf06f99383be0c))
+* adapt code for cv-web integration ([3544bd9](https://github.com/zigorlsp7/platform-ops/commit/3544bd9ecf5632e3ef89fdffbd48663b99d043b0))
+
 ## [1.1.0](https://github.com/zigorlsp7/platform-ops/compare/v1.0.4...v1.1.0) (2026-02-25)
 
 
