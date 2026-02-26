@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.2](https://github.com/zigorlsp7/platform-ops/compare/v1.1.1...v1.1.2) (2026-02-26)
+
+
+### Bug Fixes
+
+* **ci:** auto-merge release-please PRs by branch ([8e3cd47](https://github.com/zigorlsp7/platform-ops/commit/8e3cd47eb05e6fec18beeb512e1569d11b139399))
+* **ci:** auto-merge release-please PRs by branch ([8bbdafe](https://github.com/zigorlsp7/platform-ops/commit/8bbdafe71ca0383e1f97b51dc0056f506123c7ca))
+* wrong release PR author ([df6a7cb](https://github.com/zigorlsp7/platform-ops/commit/df6a7cb0720f6b55acd2ad9ad246ff0db95c04b2))
+
 ## [1.1.1](https://github.com/zigorlsp7/platform-ops/compare/v1.1.0...v1.1.1) (2026-02-26)
 
 
