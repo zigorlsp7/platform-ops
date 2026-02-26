@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.5](https://github.com/zigorlsp7/platform-ops/compare/v1.1.4...v1.1.5) (2026-02-26)
+
+
+### Bug Fixes
+
+* **ci:** use release token for release-pr auto-merge ([e302fd8](https://github.com/zigorlsp7/platform-ops/commit/e302fd89f1dd4b32023fc69db71fe38b417f68ec))
+* **ci:** use release token for release-pr auto-merge ([7585940](https://github.com/zigorlsp7/platform-ops/commit/7585940659301ae7b9f84b5f43bf98ad58ef6861))
+
 ## [1.1.4](https://github.com/zigorlsp7/platform-ops/compare/v1.1.3...v1.1.4) (2026-02-26)
 
 
