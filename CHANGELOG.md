@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/zigorlsp7/platform-ops/compare/v1.1.2...v1.1.3) (2026-02-26)
+
+
+### Bug Fixes
+
+* **ci:** deploy ops after release-please merge ([a17e40f](https://github.com/zigorlsp7/platform-ops/commit/a17e40fb51830ba93162198e1087a99b6287a750))
+* **ci:** deploy ops after release-please merge ([a2c78b1](https://github.com/zigorlsp7/platform-ops/commit/a2c78b174531d02c4e2661b9c0297c1188b6976d))
+
 ## [1.1.2](https://github.com/zigorlsp7/platform-ops/compare/v1.1.1...v1.1.2) (2026-02-26)
 
 
