@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.4](https://github.com/zigorlsp7/platform-ops/compare/v1.1.3...v1.1.4) (2026-02-26)
+
+
+### Bug Fixes
+
+* trigger release flow smoke test ([886e351](https://github.com/zigorlsp7/platform-ops/commit/886e35113b67024c4f7f9d4b78e28a7c8ad9338f))
+* trigger release flow smoke test ([c7ac551](https://github.com/zigorlsp7/platform-ops/commit/c7ac5517aec95935405950d07ea9216ac0b258ca))
+
 ## [1.1.3](https://github.com/zigorlsp7/platform-ops/compare/v1.1.2...v1.1.3) (2026-02-26)
 
 
