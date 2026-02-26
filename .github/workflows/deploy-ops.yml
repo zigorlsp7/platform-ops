@@ -12,8 +12,8 @@ on:
         description: "Optional release tag label for this ops bundle (manual dispatch only; defaults to ops-<run_number>-<run_attempt>)"
         required: false
         type: string
-  release:
-    types: [published]
+  push:
+    branches: [main]
 
 permissions:
   id-token: write
@@ -25,6 +25,9 @@ concurrency:
 
 jobs:
   package-bundle:
+    if: >-
+      github.event_name != 'push' ||
+      startsWith(github.event.head_commit.message, 'chore(main): release ')
     name: Package + Upload Ops Bundle
     runs-on: ubuntu-latest
     environment: production
@@ -37,12 +40,20 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.sha }}
 
       - name: Resolve ops release tag
         id: meta
         run: |
-          raw_tag="${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}"
+          raw_tag="${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || '' }}"
+
+          if [ -z "$raw_tag" ] && [ "${{ github.event_name }}" = "push" ]; then
+            msg='${{ github.event.head_commit.message }}'
+            version="$(printf '%s' "$msg" | sed -nE 's/^chore\(main\): release ([0-9]+\.[0-9]+\.[0-9]+).*$/\1/p')"
+            if [ -n "$version" ]; then
+              raw_tag="v${version}"
+            fi
+          fi
 
           if [ -z "$raw_tag" ]; then
             raw_tag="ops-${{ github.run_number }}-${{ github.run_attempt }}"
