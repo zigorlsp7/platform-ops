@@ -27,6 +27,6 @@ jobs:
       - name: Enable auto-merge for Release Please PR
         uses: peter-evans/enable-pull-request-automerge@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           pull-request-number: ${{ github.event.pull_request.number }}
           merge-method: squash
