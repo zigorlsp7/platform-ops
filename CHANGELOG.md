@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.6](https://github.com/zigorlsp7/platform-ops/compare/v1.1.5...v1.1.6) (2026-02-26)
+
+
+### Bug Fixes
+
+* **ci:** trigger deploy on published release ([d287248](https://github.com/zigorlsp7/platform-ops/commit/d2872486f0bf9d90039a36b3d5c13abab8a910dd))
+* **ci:** trigger deploy on published release ([03a405d](https://github.com/zigorlsp7/platform-ops/commit/03a405d6ce582c0c49bfe0f0d4396acc1bfb0880))
+
 ## [1.1.5](https://github.com/zigorlsp7/platform-ops/compare/v1.1.4...v1.1.5) (2026-02-26)
 
 
