@@ -73,7 +73,11 @@ jobs:
           )
 
           for name in "${required[@]}"; do
-            value="${!name:-}"
+            if printenv "$name" >/dev/null; then
+              value="$(printenv "$name")"
+            else
+              value=""
+            fi
             if [ -z "$value" ]; then
               echo "Missing GitHub environment variable: $name" >&2
               exit 1

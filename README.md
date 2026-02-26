@@ -65,21 +65,29 @@ brew install gitleaks
 From repo root:
 
 ```bash
-cp docker/.env.ops.local.example docker/.env.ops.local
-# edit docker/.env.ops.local
-bash ./scripts/local-stack-up-ops.sh
+npm run local:up
 ```
+
+If `docker/.env.ops.local` is missing, it is auto-created from `docker/.env.ops.local.example`.
+
+OpenBao local now uses production-like behavior:
+
+- no `-dev` auto-init
+- no auto-unseal
+- no default dev token
+
+First run (or after reset) requires manual OpenBao initialization and unseal. Follow `docs/ops-runbook.md` section 1.
 
 Stop:
 
 ```bash
-bash ./scripts/local-stack-down-ops.sh
+npm run local:down
 ```
 
 Stop and remove volumes:
 
 ```bash
-bash ./scripts/local-stack-down-ops.sh --volumes
+npm run local:reset
 ```
 
 ## Production Deployment

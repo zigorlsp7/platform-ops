@@ -8,8 +8,15 @@ if ! command -v gitleaks >/dev/null 2>&1; then
   exit 1
 fi
 
-is_ci="${CI:-false}"
-is_github_actions="${GITHUB_ACTIONS:-false}"
+is_ci="false"
+if [ "${CI+x}" = "x" ] && [ "$CI" = "true" ]; then
+  is_ci="true"
+fi
+
+is_github_actions="false"
+if [ "${GITHUB_ACTIONS+x}" = "x" ] && [ "$GITHUB_ACTIONS" = "true" ]; then
+  is_github_actions="true"
+fi
 
 # In CI (including GitHub Actions), scan repository files directly.
 # There is no staged area in workflow runners, so staged-only scans are bypassed.

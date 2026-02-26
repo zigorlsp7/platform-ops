@@ -95,7 +95,7 @@ retry() {
 }
 
 install_compose_plugin_binary() {
-  local compose_version="${COMPOSE_VERSION:-v2.29.7}"
+  local compose_version="v2.29.7"
   local os
   local arch_raw
   local arch
@@ -387,7 +387,7 @@ while [ $i -le 60 ]; do
 done
 
 if [ "$openbao_ready" != "true" ]; then
-  echo "OpenBao did not become ready (last_health_code=${openbao_code:-unknown})." >&2
+  echo "OpenBao did not become ready (last_health_code=$openbao_code)." >&2
   run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml logs --no-color --tail=120 openbao || true
   exit 1
 fi
@@ -396,7 +396,7 @@ run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml ps
 
 prune_old_releases() {
   local release_root="$BASE_DIR/releases"
-  local keep_count="${RELEASES_TO_KEEP:-5}"
+  local keep_count="5"
 
   if ! [[ "$keep_count" =~ ^[0-9]+$ ]] || [ "$keep_count" -lt 1 ]; then
     keep_count=5

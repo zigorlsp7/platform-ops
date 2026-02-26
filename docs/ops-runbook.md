@@ -15,13 +15,32 @@ npm run check:hooks
 cd <path-to-platform-ops>
 cp docker/.env.ops.local.example docker/.env.ops.local
 # edit docker/.env.ops.local
-bash ./scripts/local-stack-up-ops.sh
+npm run local:up
 ```
 
 Expected:
 
-- OpenBao becomes ready.
-- KV mount from `OPENBAO_KV_MOUNT` exists (or is auto-created as KV v2).
+- Compose services start.
+- OpenBao uses production-like behavior in local (no `-dev` auto-init/auto-unseal).
+
+If OpenBao is uninitialized or sealed, initialize/unseal it manually:
+
+```bash
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao \
+  bao operator init -key-shares=1 -key-threshold=1
+
+# Use one unseal key from the previous output
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao \
+  bao operator unseal <UNSEAL_KEY>
+
+# Use root token from init output
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao \
+  bao login <ROOT_TOKEN>
+
+# Create KV-v2 mount once (if not already present)
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao \
+  bao secrets enable -path=kv kv-v2
+```
 
 ## 2. Local sanity check
 
@@ -34,13 +53,13 @@ Expected: core services show as `Up` (OpenBao, Prometheus, Grafana, Loki, Tolgee
 ## 3. Local shutdown
 
 ```bash
-bash ./scripts/local-stack-down-ops.sh
+npm run local:down
 ```
 
 Fully clean local reset:
 
 ```bash
-bash ./scripts/local-stack-down-ops.sh --volumes
+npm run local:reset
 ```
 
 ## 4. Prepare production runtime config

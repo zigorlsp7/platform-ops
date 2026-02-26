@@ -4,8 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-OPS_ENV_FILE="${OPS_ENV_FILE:-$REPO_ROOT/docker/.env.ops.local}"
-OPS_COMPOSE_FILE="${OPS_COMPOSE_FILE:-$REPO_ROOT/docker/compose.ops.local.yml}"
+DEFAULT_OPS_ENV_FILE="$REPO_ROOT/docker/.env.ops.local"
+OPS_ENV_FILE="$DEFAULT_OPS_ENV_FILE"
+OPS_COMPOSE_FILE="$REPO_ROOT/docker/compose.ops.local.yml"
 REMOVE_VOLUMES="false"
 
 while [ "$#" -gt 0 ]; do
@@ -27,7 +28,7 @@ if [ ! -f "$OPS_ENV_FILE" ]; then
   exit 1
 fi
 
-# Keep local startup/shutdown symmetric: load local env file into shell scope.
+# Keep local startup/shutdown symmetric: load env file into shell scope.
 set -a
 # shellcheck disable=SC1090
 source "$OPS_ENV_FILE"
