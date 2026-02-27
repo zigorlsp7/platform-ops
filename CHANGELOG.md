@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.7](https://github.com/zigorlsp7/platform-ops/compare/v1.1.6...v1.1.7) (2026-02-27)
+
+
+### Bug Fixes
+
+* **ci:** skip heavy checks for release-please PRs ([146e0b7](https://github.com/zigorlsp7/platform-ops/commit/146e0b79d09b233278994ffc1b17a025ee910d2b))
+* **ci:** skip heavy checks for release-please PRs ([a4c5826](https://github.com/zigorlsp7/platform-ops/commit/a4c5826e9f576932250ea982a0e61ccbd16167f6))
+
 ## [1.1.6](https://github.com/zigorlsp7/platform-ops/compare/v1.1.5...v1.1.6) (2026-02-26)
 
 
