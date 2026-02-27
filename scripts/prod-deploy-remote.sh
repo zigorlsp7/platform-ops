@@ -394,15 +394,23 @@ fi
 
 run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml ps
 
+
 prune_old_releases() {
-  local release_root="$BASE_DIR/releases"
+  local release_root
   local keep_count="5"
+
+  # RELEASE_DIR is /opt/platform-ops/releases/<tag>; keep siblings under the same parent.
+  release_root="$(dirname "$RELEASE_DIR")"
+
+  if [ ! -d "$release_root" ]; then
+    return
+  fi
 
   if ! [[ "$keep_count" =~ ^[0-9]+$ ]] || [ "$keep_count" -lt 1 ]; then
     keep_count=5
   fi
 
-  mapfile -t release_dirs < <(find "$release_root" -mindepth 1 -maxdepth 1 -type d -printf "%T@ %p\n" | sort -nr | awk "{print \\$2}")
+  mapfile -t release_dirs < <(find "$release_root" -mindepth 1 -maxdepth 1 -type d -printf "%T@ %p\n" | sort -nr | awk '{print $2}')
 
   if [ "${#release_dirs[@]}" -le "$keep_count" ]; then
     return
