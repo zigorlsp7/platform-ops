@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.8](https://github.com/zigorlsp7/platform-ops/compare/v1.1.7...v1.1.8) (2026-02-27)
+
+
+### Bug Fixes
+
+* **ci:** make refactor commits releasable ([98921e2](https://github.com/zigorlsp7/platform-ops/commit/98921e2bf6a641adebd246ebcf8c43c1cb1d0efc))
+* **ci:** make refactor commits releasable ([e78ff55](https://github.com/zigorlsp7/platform-ops/commit/e78ff5517ef937c4dd44bda7e26dd1a2d81d6fe0))
+* deploy prune release root ([#43](https://github.com/zigorlsp7/platform-ops/issues/43)) ([d673e0a](https://github.com/zigorlsp7/platform-ops/commit/d673e0a7f13631743a239252cdddcc979eae3d7a))
+* **deploy:** derive release prune root from release dir ([#42](https://github.com/zigorlsp7/platform-ops/issues/42)) ([9a166b7](https://github.com/zigorlsp7/platform-ops/commit/9a166b7dcd73ad5c5d3f429d9bb5c9b6b60d429e))
+* trigger direct-release smoke test ([#41](https://github.com/zigorlsp7/platform-ops/issues/41)) ([27b28d8](https://github.com/zigorlsp7/platform-ops/commit/27b28d8d1db9b815adbe07f844c50b944beb676d))
+
+
+### Refactoring
+
+* **ci:** switch to direct release mode ([a3682cd](https://github.com/zigorlsp7/platform-ops/commit/a3682cdec6f23fd7aba6d6c6ef899b879e9a23a2))
+* **ci:** switch to direct release mode ([580cb9b](https://github.com/zigorlsp7/platform-ops/commit/580cb9b412c3f5c9f94807e027ab97e82eb5f855))
+
 ## [1.1.7](https://github.com/zigorlsp7/platform-ops/compare/v1.1.6...v1.1.7) (2026-02-27)
 
 
