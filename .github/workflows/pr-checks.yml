@@ -18,26 +18,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Skip heavy checks for release PRs
-        if: ${{ github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--branches--') }}
-        run: echo "Release Please PR detected; skipping heavy checks."
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--branches--') }}
 
       - uses: actions/setup-node@v4
-        if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--branches--') }}
         with:
           node-version: "22"
           cache: npm
 
       - uses: hashicorp/setup-terraform@v3
-        if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--branches--') }}
         with:
           terraform_wrapper: false
 
       - name: Install gitleaks
-        if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--branches--') }}
         run: |
           version="8.24.2"
           curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz" | tar -xz gitleaks
@@ -45,21 +37,17 @@ jobs:
           gitleaks version
 
       - name: Install dependencies
-        if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--branches--') }}
         run: npm ci
 
       - name: Run repository checks
-        if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--branches--') }}
         run: npm run check:hooks
 
       - name: Terraform validate (bootstrap)
-        if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--branches--') }}
         run: |
           terraform -chdir=infra/terraform/bootstrap init -backend=false -input=false
           terraform -chdir=infra/terraform/bootstrap validate
 
       - name: Terraform validate (aws-compose)
-        if: ${{ github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--branches--') }}
         run: |
           terraform -chdir=infra/terraform/aws-compose init -backend=false -input=false
           terraform -chdir=infra/terraform/aws-compose validate

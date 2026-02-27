@@ -120,10 +120,7 @@ Notes:
 
 ## Release Automation
 
-- `.github/workflows/release-please.yml` runs on pushes to `main` and updates/creates the Release PR.
-- `.github/workflows/auto-approve-release-please.yml` auto-approves Release Please PRs from `github-actions[bot]` and enables auto-merge.
-- When the Release PR is merged and a GitHub Release is published, `.github/workflows/deploy-ops.yml` triggers automatically and deploys that release tag.
+- `.github/workflows/release-please.yml` runs on pushes to `main` and publishes GitHub releases directly (direct release mode; no release PR).
+- `.github/workflows/deploy-ops.yml` triggers on `release.published` and deploys that release tag automatically.
 - Manual deploy remains available via `workflow_dispatch` in `.github/workflows/deploy-ops.yml`.
-- Required secret for Release Please: `RELEASE_PLEASE_TOKEN` (PAT with `contents:write` and `pull_requests:write`; do not use `GITHUB_TOKEN`).
-- Required secret for auto-approval/auto-merge: `RELEASE_PLEASE_APPROVER_TOKEN` (PAT with `pull_requests:write`; must be a different identity than `RELEASE_PLEASE_TOKEN`).
-- In repository settings, enable `Allow auto-merge` (Settings -> General -> Pull Requests).
+- Required secret for Release Please: `RELEASE_PLEASE_TOKEN` (PAT with `contents:write`; do not use `GITHUB_TOKEN`).
