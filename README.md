@@ -120,7 +120,8 @@ Notes:
 
 ## Release Automation
 
-- `.github/workflows/release-please.yml` runs on pushes to `main` and publishes GitHub releases directly (direct release mode; no release PR).
-- `.github/workflows/deploy-ops.yml` triggers on `release.published` and deploys that release tag automatically.
+- `.github/workflows/release-please.yml` runs on pushes to `main` and creates/updates the Release Please PR.
+- `.github/workflows/auto-approve-release-please.yml` auto-approves and enables auto-merge for Release Please PRs after checks pass.
+- `.github/workflows/deploy-ops.yml` triggers on `release.published` and deploys the published tag automatically.
 - Manual deploy remains available via `workflow_dispatch` in `.github/workflows/deploy-ops.yml`.
-- Required secret for Release Please: `RELEASE_PLEASE_TOKEN` (PAT with `contents:write`; do not use `GITHUB_TOKEN`).
+- Required secret for Release Please merge/release operations: `RELEASE_PLEASE_TOKEN` (PAT with `contents:write`; do not use `GITHUB_TOKEN`).
