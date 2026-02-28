@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/zigorlsp7/platform-ops/compare/v1.1.8...v1.2.0) (2026-02-28)
+
+
+### Features
+
+* **infra:** isolate cv-web deploy role and ECR repos ([#45](https://github.com/zigorlsp7/platform-ops/issues/45)) ([7af3b6b](https://github.com/zigorlsp7/platform-ops/commit/7af3b6bc19d3271e6259d39293f569d37f9697dc))
+
 ## [1.1.8](https://github.com/zigorlsp7/platform-ops/compare/v1.1.7...v1.1.8) (2026-02-27)
 
 
