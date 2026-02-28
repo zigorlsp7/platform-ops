@@ -67,6 +67,8 @@ Capture outputs:
 terraform output
 terraform output github_deploy_role_arn
 terraform output -json github_actions_variables
+terraform output cv_web_github_deploy_role_arn
+terraform output -json cv_web_github_actions_variables
 ```
 
 ## 5. Configure GitHub Environment (`production`)
@@ -81,6 +83,26 @@ In repository `platform-ops`:
 - `AWS_DEPLOY_BUCKET`
 - `AWS_DEPLOY_INSTANCE_ID`
 - `AWS_SSM_OPS_PREFIX`
+
+## 5.1 Configure GitHub Environment (`production`) in `cv-web`
+
+In repository `cv-web`:
+
+1. Settings -> Environments -> `production`.
+2. Add secret:
+- `AWS_DEPLOY_ROLE_ARN` (`terraform output cv_web_github_deploy_role_arn`).
+3. Add variables from `terraform output -json cv_web_github_actions_variables`:
+- `AWS_REGION`
+- `AWS_DEPLOY_BUCKET`
+- `AWS_DEPLOY_INSTANCE_ID`
+- `AWS_ECR_API_REPOSITORY_URI`
+- `AWS_ECR_WEB_REPOSITORY_URI`
+- `AWS_SSM_APP_PREFIX`
+
+Also set web build-time vars in `cv-web` production environment:
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_RUM_ENABLED`
+- `NEXT_PUBLIC_RUM_ENDPOINT`
 
 ## 6. Configure production runtime values
 

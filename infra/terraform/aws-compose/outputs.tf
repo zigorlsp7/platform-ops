@@ -44,3 +44,35 @@ output "github_actions_variables" {
     AWS_SSM_OPS_PREFIX         = var.ssm_ops_parameter_prefix
   }
 }
+
+output "cv_web_api_ecr_repository_url" {
+  description = "ECR repository URI for the cv-web API image."
+  value       = aws_ecr_repository.cv_web_api.repository_url
+}
+
+output "cv_web_web_ecr_repository_url" {
+  description = "ECR repository URI for the cv-web Web image."
+  value       = aws_ecr_repository.cv_web_web.repository_url
+}
+
+output "cv_web_github_deploy_role_arn" {
+  description = "IAM role ARN to configure in cv-web GitHub Actions for OIDC deploy."
+  value       = aws_iam_role.cv_web_github_deploy.arn
+}
+
+output "cv_web_ssm_app_parameter_prefix" {
+  description = "SSM prefix expected by cv-web deploy for app env values."
+  value       = var.cv_web_ssm_app_parameter_prefix
+}
+
+output "cv_web_github_actions_variables" {
+  description = "Copy these values into cv-web GitHub Environment variables (production)."
+  value = {
+    AWS_REGION                 = var.aws_region
+    AWS_DEPLOY_BUCKET          = aws_s3_bucket.deploy.id
+    AWS_DEPLOY_INSTANCE_ID     = aws_instance.app.id
+    AWS_ECR_API_REPOSITORY_URI = aws_ecr_repository.cv_web_api.repository_url
+    AWS_ECR_WEB_REPOSITORY_URI = aws_ecr_repository.cv_web_web.repository_url
+    AWS_SSM_APP_PREFIX         = var.cv_web_ssm_app_parameter_prefix
+  }
+}
