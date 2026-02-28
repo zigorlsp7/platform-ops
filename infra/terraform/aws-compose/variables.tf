@@ -137,6 +137,41 @@ variable "github_environment" {
   default     = "production"
 }
 
+variable "cv_web_github_repository" {
+  description = "GitHub repository in ORG/REPO format allowed to assume the dedicated cv-web deploy role."
+  type        = string
+  default     = "zigorlsp7/cv-web"
+}
+
+variable "cv_web_github_environment" {
+  description = "GitHub Environment name used by the dedicated cv-web deploy workflow trust policy."
+  type        = string
+  default     = "production"
+}
+
+variable "cv_web_ecr_api_repository_name" {
+  description = "Optional ECR repository name for cv-web API image."
+  type        = string
+  default     = "cv-web/prod/api"
+}
+
+variable "cv_web_ecr_web_repository_name" {
+  description = "Optional ECR repository name for cv-web Web image."
+  type        = string
+  default     = "cv-web/prod/web"
+}
+
+variable "cv_web_ssm_app_parameter_prefix" {
+  description = "SSM path prefix for cv-web app env values, e.g. /cv-web/prod/app."
+  type        = string
+  default     = "/cv-web/prod/app"
+
+  validation {
+    condition     = startswith(var.cv_web_ssm_app_parameter_prefix, "/")
+    error_message = "cv_web_ssm_app_parameter_prefix must start with '/'."
+  }
+}
+
 variable "tags" {
   description = "Extra tags applied to resources."
   type        = map(string)

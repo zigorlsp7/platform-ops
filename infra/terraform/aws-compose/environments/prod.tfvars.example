@@ -26,5 +26,12 @@ github_oidc_provider_arn    = "arn:aws:iam::123456789012:oidc-provider/token.act
 github_repository  = "your-org/platform-ops"
 github_environment = "production"
 
+# Dedicated cv-web deploy role + repositories.
+cv_web_github_repository       = "your-org/cv-web"
+cv_web_github_environment      = "production"
+cv_web_ecr_api_repository_name = "cv-web/prod/api"
+cv_web_ecr_web_repository_name = "cv-web/prod/web"
+cv_web_ssm_app_parameter_prefix = "/cv-web/prod/app"
+
 # Parameter prefixes consumed by scripts/prod-deploy-remote.sh.
 ssm_ops_parameter_prefix = "/platform-ops/prod/ops"

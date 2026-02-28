@@ -37,10 +37,12 @@ locals {
 
   selected_ami_id = var.ami_id != "" ? var.ami_id : data.aws_ami.al2023[0].id
 
-  ecr_api_repository_name = var.ecr_api_repository_name != "" ? var.ecr_api_repository_name : "${var.project}/${var.environment}/api"
-  ecr_web_repository_name = var.ecr_web_repository_name != "" ? var.ecr_web_repository_name : "${var.project}/${var.environment}/web"
-  deploy_bucket_name      = var.deploy_bucket_name != "" ? var.deploy_bucket_name : "${local.name_prefix}-deploy-${random_id.suffix.hex}"
-  ssm_ops_prefix_path     = trimprefix(var.ssm_ops_parameter_prefix, "/")
+  ecr_api_repository_name        = var.ecr_api_repository_name != "" ? var.ecr_api_repository_name : "${var.project}/${var.environment}/api"
+  ecr_web_repository_name        = var.ecr_web_repository_name != "" ? var.ecr_web_repository_name : "${var.project}/${var.environment}/web"
+  cv_web_ecr_api_repository_name = var.cv_web_ecr_api_repository_name != "" ? var.cv_web_ecr_api_repository_name : "cv-web/prod/api"
+  cv_web_ecr_web_repository_name = var.cv_web_ecr_web_repository_name != "" ? var.cv_web_ecr_web_repository_name : "cv-web/prod/web"
+  deploy_bucket_name             = var.deploy_bucket_name != "" ? var.deploy_bucket_name : "${local.name_prefix}-deploy-${random_id.suffix.hex}"
+  ssm_ops_prefix_path            = trimprefix(var.ssm_ops_parameter_prefix, "/")
 }
 
 resource "aws_vpc" "main" {
@@ -158,6 +160,60 @@ resource "aws_ecr_lifecycle_policy" "api" {
 
 resource "aws_ecr_lifecycle_policy" "web" {
   repository = aws_ecr_repository.web.name
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 50 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 50
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_repository" "cv_web_api" {
+  name                 = local.cv_web_ecr_api_repository_name
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = false
+  tags                 = merge(local.tags, { Name = "${local.name_prefix}-cv-web-api-ecr" })
+}
+
+resource "aws_ecr_repository" "cv_web_web" {
+  name                 = local.cv_web_ecr_web_repository_name
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = false
+  tags                 = merge(local.tags, { Name = "${local.name_prefix}-cv-web-web-ecr" })
+}
+
+resource "aws_ecr_lifecycle_policy" "cv_web_api" {
+  repository = aws_ecr_repository.cv_web_api.name
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 50 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 50
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_lifecycle_policy" "cv_web_web" {
+  repository = aws_ecr_repository.cv_web_web.name
   policy = jsonencode({
     rules = [
       {
@@ -373,6 +429,37 @@ resource "aws_iam_role" "github_deploy" {
   tags               = local.tags
 }
 
+data "aws_iam_policy_document" "cv_web_github_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Federated"
+      identifiers = [local.github_oidc_provider_arn]
+    }
+
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${var.cv_web_github_repository}:environment:${var.cv_web_github_environment}"]
+    }
+  }
+}
+
+resource "aws_iam_role" "cv_web_github_deploy" {
+  name               = "cv-web-${var.environment}-github-deploy"
+  assume_role_policy = data.aws_iam_policy_document.cv_web_github_assume_role.json
+  tags               = local.tags
+}
+
 data "aws_iam_policy_document" "github_deploy" {
   statement {
     sid    = "EcrAuth"
@@ -457,4 +544,90 @@ resource "aws_iam_policy" "github_deploy" {
 resource "aws_iam_role_policy_attachment" "github_deploy" {
   role       = aws_iam_role.github_deploy.name
   policy_arn = aws_iam_policy.github_deploy.arn
+}
+
+data "aws_iam_policy_document" "cv_web_github_deploy" {
+  statement {
+    sid    = "EcrAuth"
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "EcrPushPull"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart",
+    ]
+    resources = [
+      aws_ecr_repository.cv_web_api.arn,
+      aws_ecr_repository.cv_web_web.arn,
+    ]
+  }
+
+  statement {
+    sid    = "DeployBundleWrite"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket",
+    ]
+    resources = [
+      aws_s3_bucket.deploy.arn,
+      "${aws_s3_bucket.deploy.arn}/*",
+    ]
+  }
+
+  statement {
+    sid    = "SsmRunCommand"
+    effect = "Allow"
+    actions = [
+      "ssm:SendCommand",
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript",
+      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/${aws_instance.app.id}",
+    ]
+  }
+
+  statement {
+    sid    = "SsmCommandRead"
+    effect = "Allow"
+    actions = [
+      "ssm:GetCommandInvocation",
+      "ssm:ListCommandInvocations",
+      "ssm:ListCommands",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "DescribeInstances"
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeInstances",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "cv_web_github_deploy" {
+  name   = "cv-web-${var.environment}-github-deploy"
+  policy = data.aws_iam_policy_document.cv_web_github_deploy.json
+  tags   = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "cv_web_github_deploy" {
+  role       = aws_iam_role.cv_web_github_deploy.name
+  policy_arn = aws_iam_policy.cv_web_github_deploy.arn
 }
