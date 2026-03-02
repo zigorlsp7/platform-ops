@@ -43,6 +43,7 @@ locals {
   cv_web_ecr_web_repository_name = var.cv_web_ecr_web_repository_name != "" ? var.cv_web_ecr_web_repository_name : "cv-web/prod/web"
   deploy_bucket_name             = var.deploy_bucket_name != "" ? var.deploy_bucket_name : "${local.name_prefix}-deploy-${random_id.suffix.hex}"
   ssm_ops_prefix_path            = trimprefix(var.ssm_ops_parameter_prefix, "/")
+  cv_web_ssm_app_prefix_path     = trimprefix(var.cv_web_ssm_app_parameter_prefix, "/")
 }
 
 resource "aws_vpc" "main" {
@@ -309,6 +310,8 @@ data "aws_iam_policy_document" "ec2_runtime" {
     resources = [
       aws_ecr_repository.api.arn,
       aws_ecr_repository.web.arn,
+      aws_ecr_repository.cv_web_api.arn,
+      aws_ecr_repository.cv_web_web.arn,
     ]
   }
 
@@ -335,6 +338,7 @@ data "aws_iam_policy_document" "ec2_runtime" {
     ]
     resources = [
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.ssm_ops_prefix_path}*",
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.cv_web_ssm_app_prefix_path}*",
     ]
   }
 }
