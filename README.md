@@ -100,6 +100,8 @@ npm run local:reset
 
 Runbook: `docs/ops-runbook.md`.
 
+Full destructive rebuild guide (platform-ops + cv + gpool): `docs/rebuild-prod-platform-cv-gpool.md`.
+
 ## Ops UI Access (Private via SSM)
 
 Use manual commands in:

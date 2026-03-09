@@ -5,14 +5,14 @@
 
 ### Bug Fixes
 
-* **terraform:** allow cv-web runtime SSM and ECR access ([#47](https://github.com/zigorlsp7/platform-ops/issues/47)) ([65c43c4](https://github.com/zigorlsp7/platform-ops/commit/65c43c4e18862937a3949ae213f5b4a68c4902c6))
+* **terraform:** allow cv runtime SSM and ECR access ([#47](https://github.com/zigorlsp7/platform-ops/issues/47)) ([65c43c4](https://github.com/zigorlsp7/platform-ops/commit/65c43c4e18862937a3949ae213f5b4a68c4902c6))
 
 ## [1.2.0](https://github.com/zigorlsp7/platform-ops/compare/v1.1.8...v1.2.0) (2026-02-28)
 
 
 ### Features
 
-* **infra:** isolate cv-web deploy role and ECR repos ([#45](https://github.com/zigorlsp7/platform-ops/issues/45)) ([7af3b6b](https://github.com/zigorlsp7/platform-ops/commit/7af3b6bc19d3271e6259d39293f569d37f9697dc))
+* **infra:** isolate cv deploy role and ECR repos ([#45](https://github.com/zigorlsp7/platform-ops/issues/45)) ([7af3b6b](https://github.com/zigorlsp7/platform-ops/commit/7af3b6bc19d3271e6259d39293f569d37f9697dc))
 
 ## [1.1.8](https://github.com/zigorlsp7/platform-ops/compare/v1.1.7...v1.1.8) (2026-02-27)
 
@@ -85,8 +85,8 @@
 
 ### Bug Fixes
 
-* adapt code for cv-web integration ([e95878b](https://github.com/zigorlsp7/platform-ops/commit/e95878ba3dc2095cdc8d308480cf06f99383be0c))
-* adapt code for cv-web integration ([3544bd9](https://github.com/zigorlsp7/platform-ops/commit/3544bd9ecf5632e3ef89fdffbd48663b99d043b0))
+* adapt code for cv integration ([e95878b](https://github.com/zigorlsp7/platform-ops/commit/e95878ba3dc2095cdc8d308480cf06f99383be0c))
+* adapt code for cv integration ([3544bd9](https://github.com/zigorlsp7/platform-ops/commit/3544bd9ecf5632e3ef89fdffbd48663b99d043b0))
 
 ## [1.1.0](https://github.com/zigorlsp7/platform-ops/compare/v1.0.4...v1.1.0) (2026-02-25)
 

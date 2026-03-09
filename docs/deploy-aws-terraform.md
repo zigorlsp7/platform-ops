@@ -2,6 +2,10 @@
 
 This guide is intentionally scoped to `platform-ops` only.
 
+For a full destructive rebuild across `platform-ops`, `cv`, and `gpool`, use:
+
+- `docs/rebuild-prod-platform-cv-gpool.md`
+
 It covers:
 
 1. Terraform infrastructure provisioning.
@@ -67,8 +71,10 @@ Capture outputs:
 terraform output
 terraform output github_deploy_role_arn
 terraform output -json github_actions_variables
-terraform output cv_web_github_deploy_role_arn
-terraform output -json cv_web_github_actions_variables
+terraform output cv_github_deploy_role_arn
+terraform output -json cv_github_actions_variables
+terraform output gpool_github_deploy_role_arn
+terraform output -json gpool_github_actions_variables
 ```
 
 ## 5. Configure GitHub Environment (`production`)
@@ -84,14 +90,14 @@ In repository `platform-ops`:
 - `AWS_DEPLOY_INSTANCE_ID`
 - `AWS_SSM_OPS_PREFIX`
 
-## 5.1 Configure GitHub Environment (`production`) in `cv-web`
+## 5.1 Configure GitHub Environment (`production`) in `cv`
 
-In repository `cv-web`:
+In repository `cv`:
 
 1. Settings -> Environments -> `production`.
 2. Add secret:
-- `AWS_DEPLOY_ROLE_ARN` (`terraform output cv_web_github_deploy_role_arn`).
-3. Add variables from `terraform output -json cv_web_github_actions_variables`:
+- `AWS_DEPLOY_ROLE_ARN` (`terraform output cv_github_deploy_role_arn`).
+3. Add variables from `terraform output -json cv_github_actions_variables`:
 - `AWS_REGION`
 - `AWS_DEPLOY_BUCKET`
 - `AWS_DEPLOY_INSTANCE_ID`
@@ -99,10 +105,29 @@ In repository `cv-web`:
 - `AWS_ECR_WEB_REPOSITORY_URI`
 - `AWS_SSM_APP_PREFIX`
 
-Also set web build-time vars in `cv-web` production environment:
+Also set web build-time vars in `cv` production environment:
 - `NEXT_PUBLIC_API_BASE_URL`
 - `NEXT_PUBLIC_RUM_ENABLED`
 - `NEXT_PUBLIC_RUM_ENDPOINT`
+
+## 5.2 Configure GitHub Environment (`production`) in `gpool`
+
+In repository `gpool`:
+
+1. Settings -> Environments -> `production`.
+2. Add secret:
+- `AWS_DEPLOY_ROLE_ARN` (`terraform output gpool_github_deploy_role_arn`).
+3. Add variables from `terraform output -json gpool_github_actions_variables`:
+- `AWS_REGION`
+- `AWS_DEPLOY_BUCKET`
+- `AWS_DEPLOY_INSTANCE_ID`
+- `AWS_ECR_API_REPOSITORY_URI`
+- `AWS_ECR_WEB_REPOSITORY_URI`
+- `AWS_SSM_APP_PREFIX`
+
+Also set gpool web build-time vars in `gpool` production environment:
+- `NEXT_PUBLIC_API_URL`
+- `DEPLOY_HEALTHCHECK_URL` (optional, recommended)
 
 ## 6. Configure production runtime values
 

@@ -37,13 +37,16 @@ locals {
 
   selected_ami_id = var.ami_id != "" ? var.ami_id : data.aws_ami.al2023[0].id
 
-  ecr_api_repository_name        = var.ecr_api_repository_name != "" ? var.ecr_api_repository_name : "${var.project}/${var.environment}/api"
-  ecr_web_repository_name        = var.ecr_web_repository_name != "" ? var.ecr_web_repository_name : "${var.project}/${var.environment}/web"
-  cv_web_ecr_api_repository_name = var.cv_web_ecr_api_repository_name != "" ? var.cv_web_ecr_api_repository_name : "cv-web/prod/api"
-  cv_web_ecr_web_repository_name = var.cv_web_ecr_web_repository_name != "" ? var.cv_web_ecr_web_repository_name : "cv-web/prod/web"
-  deploy_bucket_name             = var.deploy_bucket_name != "" ? var.deploy_bucket_name : "${local.name_prefix}-deploy-${random_id.suffix.hex}"
-  ssm_ops_prefix_path            = trimprefix(var.ssm_ops_parameter_prefix, "/")
-  cv_web_ssm_app_prefix_path     = trimprefix(var.cv_web_ssm_app_parameter_prefix, "/")
+  ecr_api_repository_name       = var.ecr_api_repository_name != "" ? var.ecr_api_repository_name : "${var.project}/${var.environment}/api"
+  ecr_web_repository_name       = var.ecr_web_repository_name != "" ? var.ecr_web_repository_name : "${var.project}/${var.environment}/web"
+  cv_ecr_api_repository_name    = var.cv_ecr_api_repository_name != "" ? var.cv_ecr_api_repository_name : "cv/prod/api"
+  cv_ecr_web_repository_name    = var.cv_ecr_web_repository_name != "" ? var.cv_ecr_web_repository_name : "cv/prod/web"
+  gpool_ecr_api_repository_name = var.gpool_ecr_api_repository_name != "" ? var.gpool_ecr_api_repository_name : "gpool/prod/api"
+  gpool_ecr_web_repository_name = var.gpool_ecr_web_repository_name != "" ? var.gpool_ecr_web_repository_name : "gpool/prod/web"
+  deploy_bucket_name            = var.deploy_bucket_name != "" ? var.deploy_bucket_name : "${local.name_prefix}-deploy-${random_id.suffix.hex}"
+  ssm_ops_prefix_path           = trimprefix(var.ssm_ops_parameter_prefix, "/")
+  cv_ssm_app_prefix_path        = trimprefix(var.cv_ssm_app_parameter_prefix, "/")
+  gpool_ssm_app_prefix_path     = trimprefix(var.gpool_ssm_app_parameter_prefix, "/")
 }
 
 resource "aws_vpc" "main" {
@@ -179,22 +182,22 @@ resource "aws_ecr_lifecycle_policy" "web" {
   })
 }
 
-resource "aws_ecr_repository" "cv_web_api" {
-  name                 = local.cv_web_ecr_api_repository_name
+resource "aws_ecr_repository" "cv_api" {
+  name                 = local.cv_ecr_api_repository_name
   image_tag_mutability = "IMMUTABLE"
   force_delete         = false
-  tags                 = merge(local.tags, { Name = "${local.name_prefix}-cv-web-api-ecr" })
+  tags                 = merge(local.tags, { Name = "${local.name_prefix}-cv-api-ecr" })
 }
 
-resource "aws_ecr_repository" "cv_web_web" {
-  name                 = local.cv_web_ecr_web_repository_name
+resource "aws_ecr_repository" "cv_ui" {
+  name                 = local.cv_ecr_web_repository_name
   image_tag_mutability = "IMMUTABLE"
   force_delete         = false
-  tags                 = merge(local.tags, { Name = "${local.name_prefix}-cv-web-web-ecr" })
+  tags                 = merge(local.tags, { Name = "${local.name_prefix}-cv-ecr" })
 }
 
-resource "aws_ecr_lifecycle_policy" "cv_web_api" {
-  repository = aws_ecr_repository.cv_web_api.name
+resource "aws_ecr_lifecycle_policy" "cv_api" {
+  repository = aws_ecr_repository.cv_api.name
   policy = jsonencode({
     rules = [
       {
@@ -213,8 +216,62 @@ resource "aws_ecr_lifecycle_policy" "cv_web_api" {
   })
 }
 
-resource "aws_ecr_lifecycle_policy" "cv_web_web" {
-  repository = aws_ecr_repository.cv_web_web.name
+resource "aws_ecr_lifecycle_policy" "cv_ui" {
+  repository = aws_ecr_repository.cv_ui.name
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 50 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 50
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_repository" "gpool_api" {
+  name                 = local.gpool_ecr_api_repository_name
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = false
+  tags                 = merge(local.tags, { Name = "${local.name_prefix}-gpool-api-ecr" })
+}
+
+resource "aws_ecr_repository" "gpool_web" {
+  name                 = local.gpool_ecr_web_repository_name
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = false
+  tags                 = merge(local.tags, { Name = "${local.name_prefix}-gpool-web-ecr" })
+}
+
+resource "aws_ecr_lifecycle_policy" "gpool_api" {
+  repository = aws_ecr_repository.gpool_api.name
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 50 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 50
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_lifecycle_policy" "gpool_web" {
+  repository = aws_ecr_repository.gpool_web.name
   policy = jsonencode({
     rules = [
       {
@@ -310,8 +367,10 @@ data "aws_iam_policy_document" "ec2_runtime" {
     resources = [
       aws_ecr_repository.api.arn,
       aws_ecr_repository.web.arn,
-      aws_ecr_repository.cv_web_api.arn,
-      aws_ecr_repository.cv_web_web.arn,
+      aws_ecr_repository.cv_api.arn,
+      aws_ecr_repository.cv_ui.arn,
+      aws_ecr_repository.gpool_api.arn,
+      aws_ecr_repository.gpool_web.arn,
     ]
   }
 
@@ -338,7 +397,8 @@ data "aws_iam_policy_document" "ec2_runtime" {
     ]
     resources = [
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.ssm_ops_prefix_path}*",
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.cv_web_ssm_app_prefix_path}*",
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.cv_ssm_app_prefix_path}*",
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.gpool_ssm_app_prefix_path}*",
     ]
   }
 }
@@ -433,7 +493,7 @@ resource "aws_iam_role" "github_deploy" {
   tags               = local.tags
 }
 
-data "aws_iam_policy_document" "cv_web_github_assume_role" {
+data "aws_iam_policy_document" "cv_github_assume_role" {
   statement {
     effect = "Allow"
 
@@ -453,14 +513,45 @@ data "aws_iam_policy_document" "cv_web_github_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.cv_web_github_repository}:environment:${var.cv_web_github_environment}"]
+      values   = ["repo:${var.cv_github_repository}:environment:${var.cv_github_environment}"]
     }
   }
 }
 
-resource "aws_iam_role" "cv_web_github_deploy" {
-  name               = "cv-web-${var.environment}-github-deploy"
-  assume_role_policy = data.aws_iam_policy_document.cv_web_github_assume_role.json
+resource "aws_iam_role" "cv_github_deploy" {
+  name               = "cv-${var.environment}-github-deploy"
+  assume_role_policy = data.aws_iam_policy_document.cv_github_assume_role.json
+  tags               = local.tags
+}
+
+data "aws_iam_policy_document" "gpool_github_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Federated"
+      identifiers = [local.github_oidc_provider_arn]
+    }
+
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${var.gpool_github_repository}:environment:${var.gpool_github_environment}"]
+    }
+  }
+}
+
+resource "aws_iam_role" "gpool_github_deploy" {
+  name               = "gpool-${var.environment}-github-deploy"
+  assume_role_policy = data.aws_iam_policy_document.gpool_github_assume_role.json
   tags               = local.tags
 }
 
@@ -550,7 +641,7 @@ resource "aws_iam_role_policy_attachment" "github_deploy" {
   policy_arn = aws_iam_policy.github_deploy.arn
 }
 
-data "aws_iam_policy_document" "cv_web_github_deploy" {
+data "aws_iam_policy_document" "cv_github_deploy" {
   statement {
     sid    = "EcrAuth"
     effect = "Allow"
@@ -573,8 +664,8 @@ data "aws_iam_policy_document" "cv_web_github_deploy" {
       "ecr:UploadLayerPart",
     ]
     resources = [
-      aws_ecr_repository.cv_web_api.arn,
-      aws_ecr_repository.cv_web_web.arn,
+      aws_ecr_repository.cv_api.arn,
+      aws_ecr_repository.cv_ui.arn,
     ]
   }
 
@@ -625,13 +716,99 @@ data "aws_iam_policy_document" "cv_web_github_deploy" {
   }
 }
 
-resource "aws_iam_policy" "cv_web_github_deploy" {
-  name   = "cv-web-${var.environment}-github-deploy"
-  policy = data.aws_iam_policy_document.cv_web_github_deploy.json
+resource "aws_iam_policy" "cv_github_deploy" {
+  name   = "cv-${var.environment}-github-deploy"
+  policy = data.aws_iam_policy_document.cv_github_deploy.json
   tags   = local.tags
 }
 
-resource "aws_iam_role_policy_attachment" "cv_web_github_deploy" {
-  role       = aws_iam_role.cv_web_github_deploy.name
-  policy_arn = aws_iam_policy.cv_web_github_deploy.arn
+resource "aws_iam_role_policy_attachment" "cv_github_deploy" {
+  role       = aws_iam_role.cv_github_deploy.name
+  policy_arn = aws_iam_policy.cv_github_deploy.arn
+}
+
+data "aws_iam_policy_document" "gpool_github_deploy" {
+  statement {
+    sid    = "EcrAuth"
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "EcrPushPull"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart",
+    ]
+    resources = [
+      aws_ecr_repository.gpool_api.arn,
+      aws_ecr_repository.gpool_web.arn,
+    ]
+  }
+
+  statement {
+    sid    = "DeployBundleWrite"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket",
+    ]
+    resources = [
+      aws_s3_bucket.deploy.arn,
+      "${aws_s3_bucket.deploy.arn}/*",
+    ]
+  }
+
+  statement {
+    sid    = "SsmRunCommand"
+    effect = "Allow"
+    actions = [
+      "ssm:SendCommand",
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript",
+      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/${aws_instance.app.id}",
+    ]
+  }
+
+  statement {
+    sid    = "SsmCommandRead"
+    effect = "Allow"
+    actions = [
+      "ssm:GetCommandInvocation",
+      "ssm:ListCommandInvocations",
+      "ssm:ListCommands",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "DescribeInstances"
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeInstances",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "gpool_github_deploy" {
+  name   = "gpool-${var.environment}-github-deploy"
+  policy = data.aws_iam_policy_document.gpool_github_deploy.json
+  tags   = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "gpool_github_deploy" {
+  role       = aws_iam_role.gpool_github_deploy.name
+  policy_arn = aws_iam_policy.gpool_github_deploy.arn
 }
