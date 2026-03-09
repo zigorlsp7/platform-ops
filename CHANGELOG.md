@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/zigorlsp7/platform-ops/compare/v1.2.1...v1.2.2) (2026-03-09)
+
+
+### Bug Fixes
+
+* platform ops post refactor 20260309 ([#50](https://github.com/zigorlsp7/platform-ops/issues/50)) ([cfcbad5](https://github.com/zigorlsp7/platform-ops/commit/cfcbad51aab9e87fb62e3e26a46eb347f5af5c1f))
+
 ## [1.2.1](https://github.com/zigorlsp7/platform-ops/compare/v1.2.0...v1.2.1) (2026-03-02)
 
 
