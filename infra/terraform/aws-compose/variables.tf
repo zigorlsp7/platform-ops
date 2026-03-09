@@ -137,38 +137,73 @@ variable "github_environment" {
   default     = "production"
 }
 
-variable "cv_web_github_repository" {
-  description = "GitHub repository in ORG/REPO format allowed to assume the dedicated cv-web deploy role."
+variable "cv_github_repository" {
+  description = "GitHub repository in ORG/REPO format allowed to assume the dedicated cv deploy role."
   type        = string
-  default     = "zigorlsp7/cv-web"
+  default     = "zigorlsp7/cv"
 }
 
-variable "cv_web_github_environment" {
-  description = "GitHub Environment name used by the dedicated cv-web deploy workflow trust policy."
+variable "cv_github_environment" {
+  description = "GitHub Environment name used by the dedicated cv deploy workflow trust policy."
   type        = string
   default     = "production"
 }
 
-variable "cv_web_ecr_api_repository_name" {
-  description = "Optional ECR repository name for cv-web API image."
+variable "cv_ecr_api_repository_name" {
+  description = "Optional ECR repository name for cv API image."
   type        = string
-  default     = "cv-web/prod/api"
+  default     = "cv/prod/api"
 }
 
-variable "cv_web_ecr_web_repository_name" {
-  description = "Optional ECR repository name for cv-web Web image."
+variable "cv_ecr_web_repository_name" {
+  description = "Optional ECR repository name for cv Web image."
   type        = string
-  default     = "cv-web/prod/web"
+  default     = "cv/prod/web"
 }
 
-variable "cv_web_ssm_app_parameter_prefix" {
-  description = "SSM path prefix for cv-web app env values, e.g. /cv-web/prod/app."
+variable "cv_ssm_app_parameter_prefix" {
+  description = "SSM path prefix for cv app env values, e.g. /cv/prod/app."
   type        = string
-  default     = "/cv-web/prod/app"
+  default     = "/cv/prod/app"
 
   validation {
-    condition     = startswith(var.cv_web_ssm_app_parameter_prefix, "/")
-    error_message = "cv_web_ssm_app_parameter_prefix must start with '/'."
+    condition     = startswith(var.cv_ssm_app_parameter_prefix, "/")
+    error_message = "cv_ssm_app_parameter_prefix must start with '/'."
+  }
+}
+
+variable "gpool_github_repository" {
+  description = "GitHub repository in ORG/REPO format allowed to assume the dedicated gpool deploy role."
+  type        = string
+  default     = "zigorlsp7/gpool"
+}
+
+variable "gpool_github_environment" {
+  description = "GitHub Environment name used by the dedicated gpool deploy workflow trust policy."
+  type        = string
+  default     = "production"
+}
+
+variable "gpool_ecr_api_repository_name" {
+  description = "Optional ECR repository name for gpool API image."
+  type        = string
+  default     = "gpool/prod/api"
+}
+
+variable "gpool_ecr_web_repository_name" {
+  description = "Optional ECR repository name for gpool Web image."
+  type        = string
+  default     = "gpool/prod/web"
+}
+
+variable "gpool_ssm_app_parameter_prefix" {
+  description = "SSM path prefix for gpool app env values, e.g. /gpool/prod/app."
+  type        = string
+  default     = "/gpool/prod/app"
+
+  validation {
+    condition     = startswith(var.gpool_ssm_app_parameter_prefix, "/")
+    error_message = "gpool_ssm_app_parameter_prefix must start with '/'."
   }
 }
 

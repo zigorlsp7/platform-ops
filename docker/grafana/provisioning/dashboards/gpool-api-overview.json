@@ -1,10 +1,10 @@
 {
-  "uid": "cv-api-overview",
-  "title": "CV API Overview",
-  "tags": ["cv", "api", "observability"],
+  "uid": "gpool-api-overview",
+  "title": "GPool API Overview",
+  "tags": ["gpool", "api", "observability"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 1,
   "refresh": "5s",
   "time": { "from": "now-15m", "to": "now" },
   "timepicker": {
@@ -21,7 +21,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_requests_total{job=\"cv-api\"}[30s]))",
+          "expr": "sum(rate(http_requests_total{job=\"gpool-api\"}[30s]))",
           "legendFormat": "rps"
         }
       ],
@@ -39,7 +39,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_requests_total{job=\"cv-api\",status=~\"5..\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{job=\"gpool-api\",status=~\"5..\"}[1m]))",
           "legendFormat": "5xx/s"
         }
       ],
@@ -57,7 +57,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"cv-api\"}[30s])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"gpool-api\"}[30s])) by (le))",
           "legendFormat": "p95"
         }
       ],
@@ -75,7 +75,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "rate(process_cpu_seconds_total{job=\"cv-api\"}[30s])",
+          "expr": "rate(process_cpu_seconds_total{job=\"gpool-api\"}[30s])",
           "legendFormat": "cpu_seconds/s"
         }
       ],
@@ -93,7 +93,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "process_resident_memory_bytes{job=\"cv-api\"}",
+          "expr": "process_resident_memory_bytes{job=\"gpool-api\"}",
           "legendFormat": "rss_bytes"
         }
       ],
@@ -111,7 +111,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "{job=\"docker-json-logs\", service=\"api\", filename=~\".*/cv-app-.*-api-.*\\\\.log\"}"
+          "expr": "{job=\"docker-json-logs\", service=\"api\", filename=~\".*/gpool-app-.*-api-.*\\\\.log\"}"
         }
       ],
       "options": {

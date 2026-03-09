@@ -26,12 +26,19 @@ github_oidc_provider_arn    = "arn:aws:iam::123456789012:oidc-provider/token.act
 github_repository  = "your-org/platform-ops"
 github_environment = "production"
 
-# Dedicated cv-web deploy role + repositories.
-cv_web_github_repository       = "your-org/cv-web"
-cv_web_github_environment      = "production"
-cv_web_ecr_api_repository_name = "cv-web/prod/api"
-cv_web_ecr_web_repository_name = "cv-web/prod/web"
-cv_web_ssm_app_parameter_prefix = "/cv-web/prod/app"
+# Dedicated cv deploy role + repositories.
+cv_github_repository        = "your-org/cv"
+cv_github_environment       = "production"
+cv_ecr_api_repository_name  = "cv/prod/api"
+cv_ecr_web_repository_name  = "cv/prod/web"
+cv_ssm_app_parameter_prefix = "/cv/prod/app"
+
+# Dedicated gpool deploy role + repositories.
+gpool_github_repository        = "your-org/gpool"
+gpool_github_environment       = "production"
+gpool_ecr_api_repository_name  = "gpool/prod/api"
+gpool_ecr_web_repository_name  = "gpool/prod/web"
+gpool_ssm_app_parameter_prefix = "/gpool/prod/app"
 
 # Parameter prefixes consumed by scripts/prod-deploy-remote.sh.
 ssm_ops_parameter_prefix = "/platform-ops/prod/ops"

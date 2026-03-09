@@ -7,11 +7,14 @@ alerting:
         - targets: ["alertmanager:9093"]
 
 scrape_configs:
-  - job_name: "platform-app-api"
+  - job_name: "cv-api"
     metrics_path: /metrics
-    scheme: https
     static_configs:
-      - targets: ["api.platform.example.com"]
+      - targets: ["cv-app-prod-api-1:3000"]
+  - job_name: "gpool-api"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["gpool-app-prod-api-1:3000"]
 
 rule_files:
   - /etc/prometheus/prometheus.rules.yml
