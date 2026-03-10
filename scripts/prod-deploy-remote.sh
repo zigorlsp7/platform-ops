@@ -137,10 +137,6 @@ ensure_runtime_dependencies() {
     packages+=("awscli")
   fi
 
-  if ! command -v jq >/dev/null 2>&1; then
-    packages+=("jq")
-  fi
-
   if ! command -v curl >/dev/null 2>&1; then
     packages+=("curl")
   fi
@@ -188,7 +184,7 @@ ensure_runtime_dependencies() {
 
 ensure_runtime_dependencies
 
-for cmd in aws jq docker curl; do
+for cmd in aws docker curl; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Missing command: $cmd" >&2
     exit 1
@@ -210,6 +206,11 @@ run_compose() {
   exit 1
 }
 
+compose_run_supports_no_build="false"
+if run_compose run --help 2>/dev/null | grep -q -- '--no-build'; then
+  compose_run_supports_no_build="true"
+fi
+
 if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
   echo "Missing compose runtime (docker compose / docker-compose)" >&2
   exit 1
@@ -220,8 +221,13 @@ prepare_openbao_volume_permissions() {
   local openbao_gid
 
   set +e
-  openbao_uid="$(run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --entrypoint sh openbao -lc 'id -u' 2>/dev/null | tr -d '\r' | tail -n1)"
-  openbao_gid="$(run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --entrypoint sh openbao -lc 'id -g' 2>/dev/null | tr -d '\r' | tail -n1)"
+  if [ "$compose_run_supports_no_build" = "true" ]; then
+    openbao_uid="$(run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --no-build --entrypoint sh openbao -lc 'id -u' 2>/dev/null | tr -d '\r' | tail -n1)"
+    openbao_gid="$(run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --no-build --entrypoint sh openbao -lc 'id -g' 2>/dev/null | tr -d '\r' | tail -n1)"
+  else
+    openbao_uid="$(run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --entrypoint sh openbao -lc 'id -u' 2>/dev/null | tr -d '\r' | tail -n1)"
+    openbao_gid="$(run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --entrypoint sh openbao -lc 'id -g' 2>/dev/null | tr -d '\r' | tail -n1)"
+  fi
   set -e
 
   if ! [[ "$openbao_uid" =~ ^[0-9]+$ ]]; then
@@ -240,8 +246,11 @@ prepare_openbao_volume_permissions() {
     openbao_gid="1000"
   fi
 
-  echo "[deploy] Preparing OpenBao data permissions for uid:gid ${openbao_uid}:${openbao_gid}"
-  run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --user 0:0 --entrypoint sh openbao -lc "mkdir -p /openbao/data && chown -R ${openbao_uid}:${openbao_gid} /openbao/data && chmod -R u+rwX,g+rwX,o+rwX /openbao/data"
+  if [ "$compose_run_supports_no_build" = "true" ]; then
+    run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --no-build --user 0:0 --entrypoint sh openbao -lc "mkdir -p /openbao/data && chown -R ${openbao_uid}:${openbao_gid} /openbao/data && chmod -R u+rwX,g+rwX,o+rwX /openbao/data"
+  else
+    run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml run --rm --no-deps --user 0:0 --entrypoint sh openbao -lc "mkdir -p /openbao/data && chown -R ${openbao_uid}:${openbao_gid} /openbao/data && chmod -R u+rwX,g+rwX,o+rwX /openbao/data"
+  fi
 }
 
 if [ ! -d "$RELEASE_DIR" ]; then
@@ -254,7 +263,6 @@ cd "$RELEASE_DIR"
 OPS_BASE_ENV_FILE="docker/.env.ops.prod"
 OPS_ENV_FILE="$(mktemp /tmp/platform-ops-ops-env.XXXXXX)"
 trap 'rm -f "$OPS_ENV_FILE"' EXIT
-
 if [ ! -f "$OPS_BASE_ENV_FILE" ]; then
   echo "Missing base ops env file in release bundle: $OPS_BASE_ENV_FILE" >&2
   exit 1
@@ -311,6 +319,7 @@ fetch_ssm_secret_value() {
   local key="$1"
   local parameter_name="${OPS_SSM_PREFIX%/}/$key"
   local value
+  local rc
 
   set +e
   value="$(aws ssm get-parameter --region "$AWS_REGION" --name "$parameter_name" --with-decryption --query 'Parameter.Value' --output text 2>/tmp/platform-ops-ssm.err)"
@@ -329,11 +338,7 @@ fetch_ssm_secret_value() {
 }
 
 required_non_secret_keys=(
-  OPS_SHARED_NETWORK
   GRAFANA_ADMIN_USER
-  GRAFANA_USERS_ALLOW_SIGN_UP
-  TOLGEE_AUTHENTICATION_ENABLED
-  TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED
   TOLGEE_INITIAL_USERNAME
 )
 
@@ -341,56 +346,24 @@ for key in "${required_non_secret_keys[@]}"; do
   require_env_value_in_file "$OPS_ENV_FILE" "$key"
 done
 
-required_secret_keys=(
+required_ssm_secret_keys=(
   GRAFANA_ADMIN_PASSWORD
   TOLGEE_INITIAL_PASSWORD
   TOLGEE_JWT_SECRET
 )
 
-echo "[deploy] Loading required secrets from SSM prefix: $OPS_SSM_PREFIX"
-for key in "${required_secret_keys[@]}"; do
+echo "[deploy] Loading required ops secrets from SSM prefix: $OPS_SSM_PREFIX"
+for key in "${required_ssm_secret_keys[@]}"; do
   secret_value="$(fetch_ssm_secret_value "$key")"
   upsert_env_value "$OPS_ENV_FILE" "$key" "$secret_value"
 done
-network_name="$(grep -E '^OPS_SHARED_NETWORK=' "$OPS_ENV_FILE" | tail -n1 | cut -d'=' -f2- || true)"
-if [ -z "$network_name" ]; then
-  echo "Missing required non-secret value 'OPS_SHARED_NETWORK' in $OPS_BASE_ENV_FILE" >&2
-  exit 1
-fi
 
-docker network create "$network_name" >/dev/null 2>&1 || true
+docker network create "platform_ops_shared" >/dev/null 2>&1 || true
 
 prepare_openbao_volume_permissions
 
 echo "[deploy] Starting ops stack"
 run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml up -d
-
-echo "[deploy] Waiting for OpenBao health"
-openbao_ready="false"
-openbao_code=""
-i=1
-while [ $i -le 60 ]; do
-  openbao_code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8200/v1/sys/health || true)"
-  if [ "$openbao_code" = "200" ] || [ "$openbao_code" = "429" ]; then
-    openbao_ready="true"
-    break
-  fi
-
-  if [ "$openbao_code" = "501" ] || [ "$openbao_code" = "503" ]; then
-    echo "[deploy] OpenBao health is $openbao_code (not initialized or sealed), continuing for ops-only deploy."
-    openbao_ready="true"
-    break
-  fi
-
-  sleep 2
-  i=$((i + 1))
-done
-
-if [ "$openbao_ready" != "true" ]; then
-  echo "OpenBao did not become ready (last_health_code=$openbao_code)." >&2
-  run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml logs --no-color --tail=120 openbao || true
-  exit 1
-fi
 
 run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml ps
 

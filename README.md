@@ -68,7 +68,7 @@ From repo root:
 npm run local:up
 ```
 
-If `docker/.env.ops.local` is missing, it is auto-created from `docker/.env.ops.local.example`.
+`docker/.env.ops.local` is required and is the only local ops env source.
 
 OpenBao local now uses production-like behavior:
 
@@ -76,7 +76,7 @@ OpenBao local now uses production-like behavior:
 - no auto-unseal
 - no default dev token
 
-First run (or after reset) requires manual OpenBao initialization and unseal. Follow `docs/ops-runbook.md` section 1.
+First run (or after reset) requires manual OpenBao initialization and unseal. Follow `docs/local-first-start.md`.
 
 Stop:
 
@@ -98,15 +98,7 @@ npm run local:reset
 2. Run workflow `.github/workflows/deploy-ops.yml` with `ref=main`.
 3. Validate target host services using SSM and health endpoints.
 
-Runbook: `docs/ops-runbook.md`.
-
-Full destructive rebuild guide (platform-ops + cv + gpool): `docs/rebuild-prod-platform-cv-gpool.md`.
-
 ## Ops UI Access (Private via SSM)
-
-Use manual commands in:
-
-- `docs/manual-aws-operations.md`
 
 Default local URLs once tunnels are open:
 
