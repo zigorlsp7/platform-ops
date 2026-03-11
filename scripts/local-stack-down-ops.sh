@@ -24,7 +24,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ ! -f "$OPS_ENV_FILE" ]; then
-  echo "Missing $OPS_ENV_FILE. Copy docker/.env.ops.local.example to docker/.env.ops.local and fill required values." >&2
+  echo "Missing required local env file: $OPS_ENV_FILE" >&2
   exit 1
 fi
 
@@ -40,5 +40,3 @@ if [ "$REMOVE_VOLUMES" = "true" ]; then
 fi
 
 docker compose --env-file "$OPS_ENV_FILE" -f "$OPS_COMPOSE_FILE" "${args[@]}"
-
-echo "Ops stack stopped."

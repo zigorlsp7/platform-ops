@@ -49,7 +49,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:?GRAFANA_ADMIN_USER is required}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
-      - GF_USERS_ALLOW_SIGN_UP=${GRAFANA_USERS_ALLOW_SIGN_UP:?GRAFANA_USERS_ALLOW_SIGN_UP is required}
+      - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - ops-local-grafana-data:/var/lib/grafana
       - ../docker/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -75,8 +75,8 @@ services:
       - "8090:8080"
     environment:
       spring.config.additional-location: file:///config.yaml
-      TOLGEE_AUTHENTICATION_ENABLED: ${TOLGEE_AUTHENTICATION_ENABLED:?TOLGEE_AUTHENTICATION_ENABLED is required}
-      TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED: ${TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED:?TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED is required}
+      TOLGEE_AUTHENTICATION_ENABLED: true
+      TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED: false
       TOLGEE_INITIAL_USERNAME: ${TOLGEE_INITIAL_USERNAME:?TOLGEE_INITIAL_USERNAME is required}
       TOLGEE_INITIAL_PASSWORD: ${TOLGEE_INITIAL_PASSWORD:?TOLGEE_INITIAL_PASSWORD is required}
       TOLGEE_JWT_SECRET: ${TOLGEE_JWT_SECRET:?TOLGEE_JWT_SECRET is required}
@@ -110,7 +110,7 @@ services:
 
 networks:
   ops_shared:
-    name: ${OPS_SHARED_NETWORK:?OPS_SHARED_NETWORK is required}
+    name: platform_ops_shared
     external: true
 
 volumes:

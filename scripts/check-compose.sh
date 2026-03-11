@@ -16,12 +16,9 @@ prod_env_tmp="$(mktemp)"
 trap 'rm -f "$local_tmp" "$prod_tmp" "$local_env_tmp" "$prod_env_tmp"' EXIT
 
 local_env_source="$REPO_ROOT/docker/.env.ops.local"
-if [ ! -f "$local_env_source" ]; then
-  local_env_source="$REPO_ROOT/docker/.env.ops.local.example"
-fi
 
 if [ ! -f "$local_env_source" ]; then
-  echo "Missing local ops env template (.env.ops.local or .env.ops.local.example)." >&2
+  echo "Missing required local ops env file: docker/.env.ops.local" >&2
   exit 1
 fi
 
@@ -30,12 +27,8 @@ cp "$REPO_ROOT/docker/.env.ops.prod" "$prod_env_tmp"
 
 # Ensure external shell env does not override values from --env-file during validation.
 compose_vars=(
-  OPS_SHARED_NETWORK
   GRAFANA_ADMIN_USER
   GRAFANA_ADMIN_PASSWORD
-  GRAFANA_USERS_ALLOW_SIGN_UP
-  TOLGEE_AUTHENTICATION_ENABLED
-  TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED
   TOLGEE_INITIAL_USERNAME
   TOLGEE_INITIAL_PASSWORD
   TOLGEE_JWT_SECRET
@@ -78,23 +71,15 @@ set_key_if_missing_or_empty() {
 
 
 # Required keys for local compose validation.
-set_key_if_missing_or_empty "$local_env_tmp" "OPS_SHARED_NETWORK" "platform_ops_shared"
 set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_ADMIN_USER" "admin"
 set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_ADMIN_PASSWORD" "__placeholder_for_compose_validation__"
-set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_USERS_ALLOW_SIGN_UP" "false"
-set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_AUTHENTICATION_ENABLED" "true"
-set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED" "false"
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_INITIAL_USERNAME" "platform_ops_admin"
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_INITIAL_PASSWORD" "__placeholder_for_compose_validation__"
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_JWT_SECRET" "__placeholder_for_compose_validation__"
 
 # Required keys for prod compose validation.
-set_key_if_missing_or_empty "$prod_env_tmp" "OPS_SHARED_NETWORK" "platform_ops_shared"
 set_key_if_missing_or_empty "$prod_env_tmp" "GRAFANA_ADMIN_USER" "platform_ops_admin"
 set_key_if_missing_or_empty "$prod_env_tmp" "GRAFANA_ADMIN_PASSWORD" "__placeholder_for_compose_validation__"
-set_key_if_missing_or_empty "$prod_env_tmp" "GRAFANA_USERS_ALLOW_SIGN_UP" "false"
-set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_AUTHENTICATION_ENABLED" "true"
-set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_AUTHENTICATION_REGISTRATIONS_ALLOWED" "false"
 set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_INITIAL_USERNAME" "platform_ops_admin"
 set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_INITIAL_PASSWORD" "__placeholder_for_compose_validation__"
 set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_JWT_SECRET" "__placeholder_for_compose_validation__"
