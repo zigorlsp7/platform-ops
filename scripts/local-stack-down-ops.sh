@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 DEFAULT_OPS_ENV_FILE="$REPO_ROOT/docker/.env.ops.local"
+DEFAULT_OPS_ENV_EXAMPLE_FILE="$REPO_ROOT/docker/.env.ops.local.example"
 OPS_ENV_FILE="$DEFAULT_OPS_ENV_FILE"
 OPS_COMPOSE_FILE="$REPO_ROOT/docker/compose.ops.local.yml"
 REMOVE_VOLUMES="false"
@@ -24,8 +25,12 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ ! -f "$OPS_ENV_FILE" ]; then
-  echo "Missing required local env file: $OPS_ENV_FILE" >&2
-  exit 1
+  if [ -f "$DEFAULT_OPS_ENV_EXAMPLE_FILE" ]; then
+    OPS_ENV_FILE="$DEFAULT_OPS_ENV_EXAMPLE_FILE"
+  else
+    echo "Missing required local env file: $OPS_ENV_FILE" >&2
+    exit 1
+  fi
 fi
 
 # Keep local startup/shutdown symmetric: load env file into shell scope.

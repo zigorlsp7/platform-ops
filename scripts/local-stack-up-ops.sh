@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 DEFAULT_OPS_ENV_FILE="$REPO_ROOT/docker/.env.ops.local"
+DEFAULT_OPS_ENV_EXAMPLE_FILE="$REPO_ROOT/docker/.env.ops.local.example"
 OPS_ENV_FILE="$DEFAULT_OPS_ENV_FILE"
 OPS_COMPOSE_FILE="$REPO_ROOT/docker/compose.ops.local.yml"
 OPENBAO_LOCAL_ADDR="http://127.0.0.1:8200"
@@ -13,8 +14,13 @@ OPS_SHARED_NETWORK="platform_ops_shared"
 OPENBAO_HEALTH_CODE=""
 
 if [ ! -f "$OPS_ENV_FILE" ]; then
-  echo "Missing required local env file: $OPS_ENV_FILE" >&2
-  exit 1
+  if [ ! -f "$DEFAULT_OPS_ENV_EXAMPLE_FILE" ]; then
+    echo "Missing required local env file: $OPS_ENV_FILE" >&2
+    echo "Also missing example env file: $DEFAULT_OPS_ENV_EXAMPLE_FILE" >&2
+    exit 1
+  fi
+  cp "$DEFAULT_OPS_ENV_EXAMPLE_FILE" "$OPS_ENV_FILE"
+  echo "Created $OPS_ENV_FILE from $DEFAULT_OPS_ENV_EXAMPLE_FILE"
 fi
 
 for cmd in docker curl; do

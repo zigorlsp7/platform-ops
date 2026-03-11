@@ -1,23 +1,60 @@
 # Local First Start (platform-ops)
 
-Use this runbook the first time you start `platform-ops` locally, or after a local volume reset.
+Use this runbook when you are creating the full local platform from scratch.
+Start here before `cv`, `gpool`, or `notifications`, because those repos depend on the shared services started by `platform-ops`.
 
-## 1. Prerequisites
+## 1. What You Are Building
 
-From your machine:
+When this runbook is complete, you will have a local shared platform with:
 
-- Docker Desktop (or Docker Engine) is running.
-- `npm` is installed.
+- `OpenBao` for application secrets
+- `Tolgee` for runtime translations
+- `Prometheus`, `Grafana`, `Loki`, `Alertmanager`, and `Jaeger` for observability
+- `OpenTelemetry Collector` for trace ingestion
+- shared Docker network `platform_ops_shared` used by the app repos
 
-## 2. Prepare Local Env File
+## 2. Prerequisites
 
-Edit `docker/.env.ops.local` and set concrete values for:
+Run every command in this document from the `platform-ops` repo root.
+
+Required on your machine:
+
+- Docker Desktop or Docker Engine
+- `npm`
+- `openssl`
+- a web browser
+
+Optional but useful:
+
+- `jq`
+
+## 3. Prepare The Local Env File
+
+Create the real local env file from the tracked example:
+
+```bash
+cp docker/.env.ops.local.example docker/.env.ops.local
+```
+
+Then edit `docker/.env.ops.local`.
+
+Values you must set:
 
 - `GRAFANA_ADMIN_USER`
+  - local Grafana username
+  - keeping the default value is fine
 - `GRAFANA_ADMIN_PASSWORD`
+  - local Grafana password
+  - choose any strong local-only password
 - `TOLGEE_INITIAL_USERNAME`
+  - bootstrap Tolgee admin username
+  - keeping the default value is fine
 - `TOLGEE_INITIAL_PASSWORD`
-- `TOLGEE_JWT_SECRET` (must be at least 32 chars)
+  - bootstrap Tolgee admin password
+  - choose any strong local-only password
+- `TOLGEE_JWT_SECRET`
+  - secret used internally by Tolgee
+  - must be at least 32 characters
 
 Generate a strong Tolgee JWT secret:
 
@@ -25,83 +62,172 @@ Generate a strong Tolgee JWT secret:
 openssl rand -hex 32
 ```
 
-## 3. Start Local Stack
+Important:
 
-From repo root:
+- `docker/.env.ops.local` is intentionally ignored by git.
+- Keep real passwords only in `docker/.env.ops.local`, never in the tracked example file.
+
+## 4. Start The Local Stack
+
+Start the shared platform:
 
 ```bash
 npm run local:up
 ```
 
-The script starts the full local ops stack. OpenBao initialization/unseal is still manual.
+What this command does:
 
-## 4. Open OpenBao UI
+- creates the shared Docker network `platform_ops_shared`
+- starts `openbao` first
+- validates the required env values
+- starts the remaining ops services
 
-- Open `http://localhost:8200/ui` in your browser.
-- You should see OpenBao in uninitialized state.
+What it does not do:
 
-## 5. Initialize OpenBao in UI (First Time Only)
+- it does not initialize OpenBao
+- it does not unseal OpenBao
 
-In the UI:
+So a first boot always requires the manual OpenBao steps below.
 
-- Set `Key shares = 1`
-- Set `Key threshold = 1`
-- Click initialize
+## 5. Initialize And Unseal OpenBao
 
-Save these generated values:
+Open the OpenBao UI:
+
+- `http://localhost:8200/ui`
+
+On the first run, OpenBao will be uninitialized.
+
+Initialize it with:
+
+- `Key shares = 1`
+- `Key threshold = 1`
+
+Save these values immediately:
 
 - `Unseal Key 1`
 - `Initial Root Token`
 
-Store them in your password manager (do not commit them to the repo).
+Treat both as real secrets:
 
-## 6. Unseal OpenBao in UI
+- store them in your password manager
+- do not commit them
+- do not put them in tracked repo files
 
-In the UI unseal page:
+Then unseal OpenBao in the UI using `Unseal Key 1`.
 
-- Paste `Unseal Key 1`
-- Submit unseal
+After unsealing:
 
-## 7. Login in UI
+1. choose token login
+2. paste `Initial Root Token`
+3. sign in
 
-In the UI:
+## 6. Enable The `kv` Secrets Engine
 
-- Login using token method
-- Paste `Initial Root Token`
-- Sign in
+The app repos expect OpenBao KV v2 secrets under paths like `kv/cv`, `kv/gpool`, and `kv/notifications`.
 
-## 8. Enable KV Mount in UI (First Time Only)
+In the OpenBao UI:
 
-In the UI:
+1. open `Secrets engines`
+2. choose `Enable new engine`
+3. choose `KV`
+4. set `Version = 2`
+5. set `Path = kv`
+6. save
 
-- Go to secrets engines
-- Enable new engine
-- Type: `KV`
-- Version: `2`
-- Path: `kv`
-- Save
+If `kv` already exists, do nothing.
 
-If `kv/` already exists, skip this step.
+## 7. Validate The Shared Platform
 
-## 9. Validate Services
+Confirm the containers are up:
 
 ```bash
 docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml ps
+```
+
+Confirm the key services respond:
+
+```bash
 curl -fsS http://localhost:8200/v1/sys/health
 curl -fsS http://localhost:3002/api/health
 curl -fsS http://localhost:8090/healthz || curl -fsS http://localhost:8090/api/healthz
 ```
 
-## 10. Daily Restart Note
+Useful local URLs:
 
-If OpenBao restarts in sealed state:
+- OpenBao UI: `http://localhost:8200/ui`
+- Grafana: `http://localhost:3002`
+- Tolgee: `http://localhost:8090`
+
+If these work, the platform foundation for the app repos is ready.
+
+## 8. Daily Commands
+
+Start or restart the local platform:
+
+```bash
+npm run local:up
+```
+
+Stop the stack but keep volumes:
+
+```bash
+npm run local:down
+```
+
+Stop the stack and delete local volumes:
+
+```bash
+npm run local:reset
+```
+
+Important:
+
+- resetting deletes local OpenBao, Tolgee, Grafana, Loki, and related data
+- after a reset, you must initialize OpenBao again
+
+If OpenBao restarts in the sealed state:
 
 - open `http://localhost:8200/ui`
-- unseal with `Unseal Key 1`
+- unseal it again with `Unseal Key 1`
 
-## 11. CLI Fallback (Optional)
+## 9. Troubleshooting
 
-If you cannot access the UI, use the CLI equivalents:
+`Missing required local env file`:
+
+- copy `docker/.env.ops.local.example` to `docker/.env.ops.local`
+- fill in concrete values
+
+OpenBao health returns `501`:
+
+- OpenBao is running but not initialized yet
+- go back to section 5
+
+OpenBao health returns `503`:
+
+- OpenBao is sealed
+- unseal it again with `Unseal Key 1`
+
+Grafana or Tolgee login fails after you changed bootstrap credentials:
+
+- the service data volume may still contain the old values
+- if this is only a local environment, run `npm run local:reset` and bootstrap again
+
+You need service logs:
+
+```bash
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml logs --no-color <service>
+```
+
+Examples:
+
+- `openbao`
+- `tolgee`
+- `grafana`
+- `otel-collector`
+
+## 10. CLI Fallback (Optional)
+
+If the UI is not available, the equivalent OpenBao CLI flow is:
 
 ```bash
 docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao bao operator init -key-shares=1 -key-threshold=1
@@ -109,3 +235,11 @@ docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml 
 docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao bao login <ROOT_TOKEN>
 docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao bao secrets enable -path=kv kv-v2
 ```
+
+## 11. Next Step
+
+After `platform-ops` is ready, continue with:
+
+- `cv/docs/local-first-start.md`
+- `gpool/docs/local-first-start.md`
+- `notifications/docs/local-first-start.md`

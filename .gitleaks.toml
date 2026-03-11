@@ -1,9 +1,2 @@
 [extend]
 useDefault = true
-
-[allowlist]
-description = "Local env files may intentionally contain developer secrets."
-paths = [
-  '''(^|/)docker/\.env\..*\.local(\..*)?$''',
-  '''(^|/)\.env\..*\.local(\..*)?$'''
-]

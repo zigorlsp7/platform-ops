@@ -16,10 +16,15 @@ prod_env_tmp="$(mktemp)"
 trap 'rm -f "$local_tmp" "$prod_tmp" "$local_env_tmp" "$prod_env_tmp"' EXIT
 
 local_env_source="$REPO_ROOT/docker/.env.ops.local"
+local_env_example="$REPO_ROOT/docker/.env.ops.local.example"
 
 if [ ! -f "$local_env_source" ]; then
-  echo "Missing required local ops env file: docker/.env.ops.local" >&2
-  exit 1
+  if [ -f "$local_env_example" ]; then
+    local_env_source="$local_env_example"
+  else
+    echo "Missing required local ops env file: docker/.env.ops.local" >&2
+    exit 1
+  fi
 fi
 
 cp "$local_env_source" "$local_env_tmp"

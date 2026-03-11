@@ -14,8 +14,8 @@ node_modules/
 .env
 .env.*
 !*.example
-!docker/.env.ops.local
 !docker/.env.ops.prod
+docker/.env.ops.local
 
 # OS/editor
 .DS_Store
