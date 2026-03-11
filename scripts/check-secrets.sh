@@ -32,10 +32,24 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     exit 0
   fi
 
+  # Staged scan runs through stdin (--pipe), which has no path context.
+  # Exclude local env files up front so they are allowed consistently
+  # with CI full-repo scans and repository gitleaks allowlist.
+  staged_paths="$(
+    git diff --cached --name-only \
+      | rg -v '(^|/)docker/\.env\..*\.local(\..*)?$|(^|/)\.env\..*\.local(\..*)?$' \
+      || true
+  )"
+
+  if [ -z "$staged_paths" ]; then
+    echo "Only local env files are staged; skipping gitleaks staged scan."
+    exit 0
+  fi
+
   # Scan staged blob content from the git index (not working-tree files).
   # This avoids false behavior for deleted files that may still exist locally.
-  git diff --cached --name-only -z \
-    | xargs -0 -I {} sh -c 'git show ":$1" 2>/dev/null || true' _ {} \
+  printf '%s\n' "$staged_paths" \
+    | xargs -I {} sh -c 'git show ":$1" 2>/dev/null || true' _ {} \
     | gitleaks detect --pipe --redact --no-banner
 else
   gitleaks detect --source . --redact --no-banner
