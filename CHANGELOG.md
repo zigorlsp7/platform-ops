@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/zigorlsp7/platform-ops/compare/v1.4.0...v1.5.0) (2026-03-11)
+
+
+### Features
+
+* add notifications observability and docs ([#58](https://github.com/zigorlsp7/platform-ops/issues/58)) ([5d76da3](https://github.com/zigorlsp7/platform-ops/commit/5d76da3d93c020bd9b3b96ca0e8c242ff731653c))
+
 ## [1.4.0](https://github.com/zigorlsp7/platform-ops/compare/v1.3.0...v1.4.0) (2026-03-11)
 
 
