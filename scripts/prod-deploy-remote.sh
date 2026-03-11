@@ -358,6 +358,20 @@ for key in "${required_ssm_secret_keys[@]}"; do
   upsert_env_value "$OPS_ENV_FILE" "$key" "$secret_value"
 done
 
+ingress_domain_keys=(
+  CV_WEB_DOMAIN
+  CV_API_DOMAIN
+  GPOOL_WEB_DOMAIN
+  GPOOL_API_DOMAIN
+  OPS_GRAFANA_DOMAIN
+  OPS_TOLGEE_DOMAIN
+  OPS_OPENBAO_DOMAIN
+)
+for key in "${ingress_domain_keys[@]}"; do
+  require_env_value_in_file "$OPS_ENV_FILE" "$key"
+done
+echo "[deploy] Central ingress enabled"
+
 docker network create "platform_ops_shared" >/dev/null 2>&1 || true
 
 prepare_openbao_volume_permissions

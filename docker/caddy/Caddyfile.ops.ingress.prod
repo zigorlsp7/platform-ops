@@ -1,0 +1,34 @@
+{$CV_WEB_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy cv-web:3001
+}
+
+{$CV_API_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy cv-api:3000
+}
+
+{$GPOOL_WEB_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy gpool-web:3001
+}
+
+{$GPOOL_API_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy gpool-api:3000
+}
+
+{$OPS_GRAFANA_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy grafana:3000
+}
+
+{$OPS_TOLGEE_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy tolgee:8080
+}
+
+{$OPS_OPENBAO_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy openbao:8200
+}

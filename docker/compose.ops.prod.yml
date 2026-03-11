@@ -101,6 +101,30 @@ services:
       - ops-prod-openbao-data:/openbao/data
     networks: [ops_shared]
 
+  central-ingress:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CV_WEB_DOMAIN: ${CV_WEB_DOMAIN}
+      CV_API_DOMAIN: ${CV_API_DOMAIN}
+      GPOOL_WEB_DOMAIN: ${GPOOL_WEB_DOMAIN}
+      GPOOL_API_DOMAIN: ${GPOOL_API_DOMAIN}
+      OPS_GRAFANA_DOMAIN: ${OPS_GRAFANA_DOMAIN}
+      OPS_TOLGEE_DOMAIN: ${OPS_TOLGEE_DOMAIN}
+      OPS_OPENBAO_DOMAIN: ${OPS_OPENBAO_DOMAIN}
+    volumes:
+      - ./caddy/Caddyfile.ops.ingress.prod:/etc/caddy/Caddyfile:ro
+      - ops-prod-caddy-data:/data
+      - ops-prod-caddy-config:/config
+    depends_on:
+      - grafana
+      - tolgee
+      - openbao
+    networks: [ops_shared]
+
 networks:
   ops_shared:
     name: platform_ops_shared
@@ -112,3 +136,5 @@ volumes:
   ops-prod-loki-data:
   ops-prod-tolgee-data:
   ops-prod-openbao-data:
+  ops-prod-caddy-data:
+  ops-prod-caddy-config:
