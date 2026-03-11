@@ -98,6 +98,8 @@ npm run local:reset
 2. Run workflow `.github/workflows/deploy-ops.yml` with `ref=main`.
 3. Validate target host services using SSM and health endpoints.
 
+Destroy the full AWS environment later with `docs/cloud-destroy.md`.
+
 ## Ops UI Access (Private via SSM)
 
 Default local URLs once tunnels are open:

@@ -2,6 +2,7 @@
 
 Use this runbook when you are building the production platform from scratch on AWS.
 Complete this repo first. The application repos (`cv`, `gpool`, `notifications`) depend on the infrastructure, ingress, OpenBao instance, and shared observability services created here.
+For full teardown later, use `docs/cloud-destroy.md`.
 
 ## 1. What You Are Building
 
