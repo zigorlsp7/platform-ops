@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/zigorlsp7/platform-ops/compare/v1.3.0...v1.4.0) (2026-03-11)
+
+
+### Features
+
+* **ops:** switch to always-on central ingress ([#56](https://github.com/zigorlsp7/platform-ops/issues/56)) ([7259a7b](https://github.com/zigorlsp7/platform-ops/commit/7259a7b6c2a4a6034479eeaf8827b62a8df0e107))
+
 ## [1.3.0](https://github.com/zigorlsp7/platform-ops/compare/v1.2.2...v1.3.0) (2026-03-11)
 
 
