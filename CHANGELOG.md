@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/zigorlsp7/platform-ops/compare/v1.5.0...v1.6.0) (2026-03-11)
+
+
+### Features
+
+* platform ops notifications 20260311 ([#60](https://github.com/zigorlsp7/platform-ops/issues/60)) ([e236d8f](https://github.com/zigorlsp7/platform-ops/commit/e236d8f6eed7c7fbcfee84c455132aa0ba7dcb22))
+
 ## [1.5.0](https://github.com/zigorlsp7/platform-ops/compare/v1.4.0...v1.5.0) (2026-03-11)
 
 
