@@ -68,7 +68,7 @@ From repo root:
 npm run local:up
 ```
 
-`docker/.env.ops.local` is required and is the only local ops env source.
+Create `docker/.env.ops.local` from `docker/.env.ops.local.example` first. The real `.local` file is ignored by git and is the local ops env source.
 
 OpenBao local now uses production-like behavior:
 
