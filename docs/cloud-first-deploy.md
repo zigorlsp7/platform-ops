@@ -66,6 +66,37 @@ Required environment secrets:
 
 - `AWS_DEPLOY_ROLE_ARN`
 
+## 2.1 GitHub Repository Secret For Release Please
+
+`release-please` workflows use a repository-level secret named `RELEASE_PLEASE_TOKEN`.
+If it is missing, workflow `Release Please` fails with:
+`Input required and not supplied: token`.
+
+How to create the token in GitHub UI:
+
+1. GitHub -> `Settings` -> `Developer settings` -> `Personal access tokens`.
+2. Create a token (classic PAT with `repo`, or fine-grained PAT).
+3. For fine-grained PAT, grant repository access to `zigorlsp7/platform-ops` with:
+- `Contents`: Read and Write
+- `Pull requests`: Read and Write
+4. Copy token value once (GitHub shows it only once).
+
+How to save it as repository secret:
+
+```bash
+read -rsp "RELEASE_PLEASE_TOKEN: " RELEASE_PLEASE_TOKEN && echo
+gh secret set RELEASE_PLEASE_TOKEN \
+  --repo zigorlsp7/platform-ops \
+  --body "$RELEASE_PLEASE_TOKEN"
+unset RELEASE_PLEASE_TOKEN
+```
+
+Verify it exists:
+
+```bash
+gh secret list --repo zigorlsp7/platform-ops
+```
+
 ## 3. Create Required SSM SecureString Parameters
 
 Create these SecureString parameters under `AWS_SSM_OPS_PREFIX`:
