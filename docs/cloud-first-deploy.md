@@ -154,6 +154,49 @@ Recommended first run:
 3. Set `ref=main`.
 4. Optional `release_tag` (if empty, workflow generates one).
 
+## 4.1 Central Ingress (Final Layout)
+
+`platform-ops` provides the only public ingress service (Caddy) in:
+
+- `docker/compose.ops.prod.yml`
+- `docker/caddy/Caddyfile.ops.ingress.prod`
+
+Required non-secret domain values in `docker/.env.ops.prod`:
+
+- `CV_WEB_DOMAIN`
+- `CV_API_DOMAIN`
+- `GPOOL_WEB_DOMAIN`
+- `GPOOL_API_DOMAIN`
+- `OPS_GRAFANA_DOMAIN`
+- `OPS_TOLGEE_DOMAIN`
+- `OPS_OPENBAO_DOMAIN`
+
+Final state requirements:
+
+- `cv` and `gpool` app stacks must not expose their own `:80/:443` Caddy services.
+- `cv` and `gpool` web services must be reachable on network aliases `cv-web` and `gpool-web`.
+- `cv` and `gpool` API services must be reachable on aliases `cv-api` and `gpool-api`.
+
+Phase 4 cleanup:
+
+1. Deploy latest `cv` and `gpool` releases (with app-level Caddy removed).
+2. Deploy latest `platform-ops` release (central ingress always on).
+3. Verify no old app Caddy containers are still running from older releases with: `docker ps --format '{{.Names}}' | grep -E 'cv-app-prod-caddy-1|gpool-app-prod-caddy-1' || true`.
+
+DNS (once cutover is complete):
+
+- `cv.zigordev.com` -> EC2 public IP
+- `cv-api.zigordev.com` -> EC2 public IP
+- `gpool.zigordev.com` -> EC2 public IP
+- `gpool-api.zigordev.com` -> EC2 public IP
+- `grafana.zigordev.com` -> EC2 public IP
+- `tolgee.zigordev.com` -> EC2 public IP
+- `openbao.zigordev.com` -> EC2 public IP
+
+Security note:
+
+- Exposing OpenBao publicly is high risk. Prefer private access (SSM/VPN). If exposed, enforce strict network and identity controls.
+
 ## 5. Initialize OpenBao on Prod (First Time Only)
 
 `cv` and `gpool` deploys require OpenBao to be initialized, unsealed, and `kv` enabled.
