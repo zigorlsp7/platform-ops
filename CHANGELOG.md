@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/zigorlsp7/platform-ops/compare/v1.2.2...v1.3.0) (2026-03-11)
+
+
+### Features
+
+* unified env non secrets 20260310 ([#52](https://github.com/zigorlsp7/platform-ops/issues/52)) ([4e5fba5](https://github.com/zigorlsp7/platform-ops/commit/4e5fba5fa4a79ba14af98f2e1a1d2f29a731f684))
+* unified env non secrets 20260310 ([#53](https://github.com/zigorlsp7/platform-ops/issues/53)) ([d68a9c8](https://github.com/zigorlsp7/platform-ops/commit/d68a9c8b9777573929479b5762af81b4dda9fd09))
+
 ## [1.2.2](https://github.com/zigorlsp7/platform-ops/compare/v1.2.1...v1.2.2) (2026-03-09)
 
 
