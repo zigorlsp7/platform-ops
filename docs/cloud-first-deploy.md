@@ -6,6 +6,24 @@ Use this runbook to deploy `platform-ops` to AWS for the first time.
 
 Use this once on a clean AWS account/environment to create the required infra.
 
+Before running `terraform apply` in `infra/terraform/aws-compose`, set the GitHub OIDC values in `environments/prod.tfvars` to your real account/repositories (do not leave example placeholders):
+
+```hcl
+create_github_oidc_provider = false
+github_oidc_provider_arn    = "arn:aws:iam::512539654280:oidc-provider/token.actions.githubusercontent.com"
+
+github_repository  = "zigorlsp7/platform-ops"
+github_environment = "production"
+
+cv_github_repository    = "zigorlsp7/cv"
+cv_github_environment   = "production"
+gpool_github_repository = "zigorlsp7/gpool"
+gpool_github_environment = "production"
+```
+
+If these values are wrong, GitHub Actions deploy fails with:
+`Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity`.
+
 ```bash
 set -euo pipefail
 
