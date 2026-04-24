@@ -20,7 +20,6 @@ Service configs are grouped under per-service folders in `docker/`:
 - `docker/prometheus/`
 - `docker/tolgee/`
 
-
 ## Husky Commit Checks
 
 This repo uses Husky + Node scripts for local quality gates.
@@ -93,8 +92,10 @@ npm run local:reset
 ## Production Deployment
 
 1. Configure GitHub environment `production` in `platform-ops`:
+
 - secret: `AWS_DEPLOY_ROLE_ARN`
 - vars: `AWS_REGION`, `AWS_DEPLOY_BUCKET`, `AWS_DEPLOY_INSTANCE_ID`, `AWS_SSM_OPS_PREFIX`
+
 2. Run workflow `.github/workflows/deploy-ops.yml` with `ref=main`.
 3. Validate target host services using SSM and health endpoints.
 

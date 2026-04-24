@@ -9,7 +9,7 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector:0.98.0
     restart: unless-stopped
-    command: ["--config=/etc/otelcol/config.yml"]
+    command: ['--config=/etc/otelcol/config.yml']
     volumes:
       - ./otel/config.yml:/etc/otelcol/config.yml:ro
     depends_on:
@@ -43,7 +43,7 @@ services:
     image: grafana/grafana:10.4.2
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"
+      - '127.0.0.1:3000:3000'
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:?GRAFANA_ADMIN_USER is required}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
@@ -58,9 +58,9 @@ services:
   loki:
     image: grafana/loki:2.9.8
     restart: unless-stopped
-    command: ["-config.file=/etc/loki/config.yml"]
+    command: ['-config.file=/etc/loki/config.yml']
     ports:
-      - "127.0.0.1:3100:3100"
+      - '127.0.0.1:3100:3100'
     volumes:
       - ../docker/loki/config.yml:/etc/loki/config.yml:ro
       - ops-prod-loki-data:/loki
@@ -70,7 +70,7 @@ services:
     image: tolgee/tolgee:v3.141.1
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8080:8080"
+      - '127.0.0.1:8080:8080'
     environment:
       spring.config.additional-location: file:///config.yaml
       TOLGEE_AUTHENTICATION_ENABLED: true
@@ -82,7 +82,11 @@ services:
       - ops-prod-tolgee-data:/data
       - ./tolgee/config.yaml:/config.yaml:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz >/dev/null 2>&1 || wget -qO- http://localhost:8080/api/healthz >/dev/null 2>&1"]
+      test:
+        [
+          'CMD-SHELL',
+          'wget -qO- http://localhost:8080/healthz >/dev/null 2>&1 || wget -qO- http://localhost:8080/api/healthz >/dev/null 2>&1',
+        ]
       interval: 5s
       timeout: 3s
       retries: 30
@@ -93,9 +97,9 @@ services:
     restart: unless-stopped
     cap_add:
       - IPC_LOCK
-    command: ["server", "-config=/openbao/config/prod.hcl"]
+    command: ['server', '-config=/openbao/config/prod.hcl']
     ports:
-      - "127.0.0.1:8200:8200"
+      - '127.0.0.1:8200:8200'
     volumes:
       - ../docker/openbao/prod.hcl:/openbao/config/prod.hcl:ro
       - ops-prod-openbao-data:/openbao/data
@@ -106,33 +110,29 @@ services:
     restart: unless-stopped
     command:
       [
-        "redpanda",
-        "start",
-        "--overprovisioned",
-        "--smp",
-        "1",
-        "--memory",
-        "1G",
-        "--reserve-memory",
-        "0M",
-        "--check=false",
-        "--node-id",
-        "0",
-        "--kafka-addr",
-        "INTERNAL://0.0.0.0:9092",
-        "--advertise-kafka-addr",
-        "INTERNAL://platform-redpanda:9092",
-        "--set",
-        "redpanda.auto_create_topics_enabled=true"
+        'redpanda',
+        'start',
+        '--overprovisioned',
+        '--smp',
+        '1',
+        '--memory',
+        '1G',
+        '--reserve-memory',
+        '0M',
+        '--check=false',
+        '--node-id',
+        '0',
+        '--kafka-addr',
+        'INTERNAL://0.0.0.0:9092',
+        '--advertise-kafka-addr',
+        'INTERNAL://platform-redpanda:9092',
+        '--set',
+        'redpanda.auto_create_topics_enabled=true',
       ]
     volumes:
       - ops-prod-redpanda-data:/var/lib/redpanda/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "rpk cluster health | grep -Eq 'Healthy:[[:space:]]+true'",
-        ]
+      test: ['CMD-SHELL', "rpk cluster health | grep -Eq 'Healthy:[[:space:]]+true'"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -145,8 +145,8 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     environment:
       CV_WEB_DOMAIN: ${CV_WEB_DOMAIN}
       CV_API_DOMAIN: ${CV_API_DOMAIN}

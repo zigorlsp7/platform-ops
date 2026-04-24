@@ -4,21 +4,21 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: ["alertmanager:9093"]
+        - targets: ['alertmanager:9093']
 
 scrape_configs:
-  - job_name: "cv-api"
+  - job_name: 'cv-api'
     metrics_path: /metrics
     static_configs:
-      - targets: ["cv-app-local-api-1:3000"]
-  - job_name: "gpool-api"
+      - targets: ['cv-app-local-api-1:3000']
+  - job_name: 'gpool-api'
     metrics_path: /metrics
     static_configs:
-      - targets: ["gpool-app-local-api-1:3000"]
-  - job_name: "notifications-api"
+      - targets: ['gpool-app-local-api-1:3000']
+  - job_name: 'notifications-api'
     metrics_path: /metrics
     static_configs:
-      - targets: ["notifications-app-local-api-1:8080"]
+      - targets: ['notifications-app-local-api-1:8080']
 
 rule_files:
   - /etc/prometheus/prometheus.rules.yml

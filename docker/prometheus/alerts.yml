@@ -7,9 +7,9 @@ groups:
         labels:
           severity: page
         annotations:
-          summary: "{{ $labels.job }} error rate > 2% (5m)"
-          description: "The API for {{ $labels.job }} is returning too many 5xx responses over the last 5 minutes."
-          runbook_url: "https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/api-high-error-rate.md"
+          summary: '{{ $labels.job }} error rate > 2% (5m)'
+          description: 'The API for {{ $labels.job }} is returning too many 5xx responses over the last 5 minutes.'
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/api-high-error-rate.md'
 
       - alert: PlatformApiHighLatencyP95
         expr: platform_api:http_p95_seconds:5m > 0.3
@@ -17,6 +17,6 @@ groups:
         labels:
           severity: page
         annotations:
-          summary: "{{ $labels.job }} p95 latency > 300ms (5m)"
-          description: "The API p95 latency for {{ $labels.job }} is above target over the last 5 minutes."
-          runbook_url: "https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/api-high-latency.md"
+          summary: '{{ $labels.job }} p95 latency > 300ms (5m)'
+          description: 'The API p95 latency for {{ $labels.job }} is above target over the last 5 minutes.'
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/api-high-latency.md'
