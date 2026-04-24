@@ -5,6 +5,8 @@
   "description": "Operations and infrastructure for platform environments",
   "scripts": {
     "prepare": "husky",
+    "format": "prettier --write \".github/**/*.{json,yml,yaml}\" \"docker/**/*.{json,yml,yaml}\" \"docs/**/*.md\" \"infra/**/*.md\" \"README.md\" \"package.json\"",
+    "format:check": "prettier --check \".github/**/*.{json,yml,yaml}\" \"docker/**/*.{json,yml,yaml}\" \"docs/**/*.md\" \"infra/**/*.md\" \"README.md\" \"package.json\"",
     "check:secrets": "bash ./scripts/check-secrets.sh",
     "check:shell": "bash ./scripts/check-shell.sh",
     "check:workflows": "bash ./scripts/check-workflows.sh",
@@ -16,6 +18,7 @@
     "local:reset": "bash ./scripts/local-stack-down-ops.sh --volumes"
   },
   "devDependencies": {
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "prettier": "^3.1.0"
   }
 }
