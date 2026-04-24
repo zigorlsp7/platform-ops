@@ -108,6 +108,61 @@ services:
       retries: 20
     networks: [ops_shared]
 
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.3.10
+    restart: unless-stopped
+    command:
+      [
+        "redpanda",
+        "start",
+        "--overprovisioned",
+        "--smp",
+        "1",
+        "--memory",
+        "1G",
+        "--reserve-memory",
+        "0M",
+        "--check=false",
+        "--node-id",
+        "0",
+        "--kafka-addr",
+        "INTERNAL://0.0.0.0:9092,OUTSIDE://0.0.0.0:19092",
+        "--advertise-kafka-addr",
+        "INTERNAL://platform-redpanda:9092,OUTSIDE://localhost:19092",
+        "--set",
+        "redpanda.auto_create_topics_enabled=true"
+      ]
+    ports:
+      - "19092:19092"
+      - "19644:9644"
+    volumes:
+      - ops-local-redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "rpk cluster health | grep -Eq 'Healthy:[[:space:]]+true'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      ops_shared:
+        aliases:
+          - platform-redpanda
+
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.8.1
+    restart: unless-stopped
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKERS: platform-redpanda:9092
+    ports:
+      - "18081:8080"
+    networks: [ops_shared]
+
 networks:
   ops_shared:
     name: platform_ops_shared
@@ -118,3 +173,4 @@ volumes:
   ops-local-loki-data:
   ops-local-tolgee-data:
   ops-local-openbao-data:
+  ops-local-redpanda-data:

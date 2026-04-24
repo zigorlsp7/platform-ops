@@ -101,6 +101,46 @@ services:
       - ops-prod-openbao-data:/openbao/data
     networks: [ops_shared]
 
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.3.10
+    restart: unless-stopped
+    command:
+      [
+        "redpanda",
+        "start",
+        "--overprovisioned",
+        "--smp",
+        "1",
+        "--memory",
+        "1G",
+        "--reserve-memory",
+        "0M",
+        "--check=false",
+        "--node-id",
+        "0",
+        "--kafka-addr",
+        "INTERNAL://0.0.0.0:9092",
+        "--advertise-kafka-addr",
+        "INTERNAL://platform-redpanda:9092",
+        "--set",
+        "redpanda.auto_create_topics_enabled=true"
+      ]
+    volumes:
+      - ops-prod-redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "rpk cluster health | grep -Eq 'Healthy:[[:space:]]+true'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      ops_shared:
+        aliases:
+          - platform-redpanda
+
   central-ingress:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -136,5 +176,6 @@ volumes:
   ops-prod-loki-data:
   ops-prod-tolgee-data:
   ops-prod-openbao-data:
+  ops-prod-redpanda-data:
   ops-prod-caddy-data:
   ops-prod-caddy-config:

@@ -5,7 +5,7 @@ Shared operations and infrastructure repository for platform services.
 ## Scope
 
 - Terraform infrastructure for AWS deployment
-- Ops Docker stack (OpenBao, Prometheus, Grafana, Loki, Tolgee, OTel, Alertmanager, Jaeger)
+- Ops Docker stack (OpenBao, Redpanda, Prometheus, Grafana, Loki, Tolgee, OTel, Alertmanager, Jaeger)
 - Deployment orchestration workflows and scripts
 
 ## Docker Config Layout
@@ -111,6 +111,7 @@ Default local URLs once tunnels are open:
 Notes:
 
 - Tolgee auth depends on `docker/tolgee/config.yaml` plus `spring.config.additional-location` in compose (configured in this repo).
+- The shared Redpanda broker is part of this repo's ops stack and is reachable on the shared Docker network as `platform-redpanda:9092`.
 - Prometheus and Jaeger UIs are not exposed; use Grafana for metrics and traces.
 - Alert status is available in Grafana via the Alertmanager datasource.
 
