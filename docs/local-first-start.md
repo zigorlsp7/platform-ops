@@ -9,6 +9,7 @@ When this runbook is complete, you will have a local shared platform with:
 
 - `OpenBao` for application secrets
 - `Tolgee` for runtime translations
+- `Redpanda` and Redpanda Console for the shared Kafka-compatible broker
 - `Prometheus`, `Grafana`, `Loki`, `Alertmanager`, and `Jaeger` for observability
 - `OpenTelemetry Collector` for trace ingestion
 - shared Docker network `platform_ops_shared` used by the app repos
@@ -80,7 +81,7 @@ What this command does:
 - creates the shared Docker network `platform_ops_shared`
 - starts `openbao` first
 - validates the required env values
-- starts the remaining ops services
+- starts the remaining ops services, including the shared Redpanda broker
 
 What it does not do:
 
@@ -144,6 +145,12 @@ Confirm the containers are up:
 docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml ps
 ```
 
+Confirm the shared broker is running:
+
+```bash
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml ps redpanda redpanda-console
+```
+
 Confirm the key services respond:
 
 ```bash
@@ -157,10 +164,35 @@ Useful local URLs:
 - OpenBao UI: `http://localhost:8200/ui`
 - Grafana: `http://localhost:3002`
 - Tolgee: `http://localhost:8090`
+- Redpanda Console: `http://localhost:18081`
 
 If these work, the platform foundation for the app repos is ready.
 
-## 8. Daily Commands
+## 8. Translation Workflow
+
+Tolgee in the local `platform-ops` stack is the development authoring source for app translations.
+
+Use this model consistently:
+
+- edit translations in the local Tolgee UI at `http://localhost:8090`
+- run the downstream app repo `local:up` command again after Tolgee edits
+- that app startup pulls the latest Tolgee export into the tracked `apps/ui/messages/*.json` files
+- commit those JSON snapshot changes to git if you want the history in the repository
+- do not treat the local JSON files as the primary editing surface
+
+Promotion model:
+
+- local Tolgee is the development authoring source
+- committed JSON snapshots are the auditable git history
+- production Tolgee is updated by the downstream app repo promotion workflow
+- production Tolgee should be treated as a promoted target, not as a manual editing surface
+
+This means there are only two intended write paths:
+
+- local Tolgee during development
+- git commits that capture the pulled snapshots
+
+## 9. Daily Commands
 
 Start or restart the local platform:
 
@@ -182,7 +214,7 @@ npm run local:reset
 
 Important:
 
-- resetting deletes local OpenBao, Tolgee, Grafana, Loki, and related data
+- resetting deletes local OpenBao, Tolgee, Redpanda, Grafana, Loki, and related data
 - after a reset, you must initialize OpenBao again
 
 If OpenBao restarts in the sealed state:
@@ -190,7 +222,7 @@ If OpenBao restarts in the sealed state:
 - open `http://localhost:8200/ui`
 - unseal it again with `Unseal Key 1`
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 `Missing required local env file`:
 
@@ -222,21 +254,23 @@ Examples:
 
 - `openbao`
 - `tolgee`
+- `redpanda`
+- `redpanda-console`
 - `grafana`
 - `otel-collector`
 
-## 10. CLI Fallback (Optional)
+## 11. CLI Fallback (Optional)
 
 If the UI is not available, the equivalent OpenBao CLI flow is:
 
 ```bash
-docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao bao operator init -key-shares=1 -key-threshold=1
-docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao bao operator unseal <UNSEAL_KEY>
-docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao bao login <ROOT_TOKEN>
-docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T openbao bao secrets enable -path=kv kv-v2
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T -e BAO_ADDR=http://127.0.0.1:8200 openbao bao operator init -key-shares=1 -key-threshold=1
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T -e BAO_ADDR=http://127.0.0.1:8200 openbao bao operator unseal <UNSEAL_KEY>
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T -e BAO_ADDR=http://127.0.0.1:8200 -e BAO_TOKEN=<ROOT_TOKEN> openbao bao login <ROOT_TOKEN>
+docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml exec -T -e BAO_ADDR=http://127.0.0.1:8200 -e BAO_TOKEN=<ROOT_TOKEN> openbao bao secrets enable -path=kv kv-v2
 ```
 
-## 11. Next Step
+## 12. Next Step
 
 After `platform-ops` is ready, continue with:
 

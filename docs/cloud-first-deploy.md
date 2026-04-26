@@ -1,7 +1,7 @@
 # Cloud First Deploy (platform-ops)
 
 Use this runbook when you are building the production platform from scratch on AWS.
-Complete this repo first. The application repos (`cv`, `gpool`, `notifications`) depend on the infrastructure, ingress, OpenBao instance, and shared observability services created here.
+Complete this repo first. The application repos (`cv`, `gpool`, `notifications`) depend on the infrastructure, ingress, OpenBao instance, shared Redpanda broker, and shared observability services created here.
 For full teardown later, use `docs/cloud-destroy.md`.
 
 ## 1. What You Are Building
@@ -10,7 +10,7 @@ When this runbook is complete, you will have:
 
 - AWS infrastructure provisioned by Terraform
 - a production EC2 host running the shared ops stack
-- OpenBao, Tolgee, Grafana, Prometheus, Loki, Alertmanager, Jaeger, and the OTEL collector
+- OpenBao, Tolgee, Redpanda, Grafana, Prometheus, Loki, Alertmanager, Jaeger, and the OTEL collector
 - central public ingress for all platform domains
 - the GitHub deployment wiring needed for this repo and the downstream app repos
 
@@ -221,8 +221,28 @@ Then:
 3. enable `kv` v2 at path `kv` if it does not already exist
 
 This is the production secret store used later by `cv`, `gpool`, and `notifications`.
+The shared Redpanda broker deployed by `platform-ops` is also what those repos use for Kafka-based notifications.
 
-## 9. Configure DNS And Ingress
+## 9. Translation Promotion Model
+
+For app repos that use Tolgee, production Tolgee should not be a manual editing source.
+
+Use this model consistently:
+
+- local Tolgee from `platform-ops` is the development authoring source
+- downstream app repos pull local Tolgee into tracked `apps/ui/messages/*.json` snapshots
+- those snapshot changes are committed to git for history
+- each app repo promotes its committed snapshots into production Tolgee through a dedicated GitHub workflow
+
+Operational rule:
+
+- local Tolgee can be edited during development
+- production Tolgee should be treated as a promoted runtime target
+- do not maintain separate conflicting truths in git, local Tolgee, and prod Tolgee
+
+The downstream app runbooks in `cv` and `gpool` document the repo-specific commands and GitHub settings for this promotion flow.
+
+## 10. Configure DNS And Ingress
 
 `platform-ops` owns the shared public ingress.
 These domains come from `docker/.env.ops.prod`:
@@ -247,7 +267,7 @@ Security note:
 - exposing OpenBao publicly is high risk
 - prefer private access through SSM tunneling or another trusted admin path whenever possible
 
-## 10. Validate The Production Ops Stack
+## 11. Validate The Production Ops Stack
 
 From the EC2 instance or through an SSM shell:
 
@@ -255,6 +275,7 @@ From the EC2 instance or through an SSM shell:
 curl -fsS http://127.0.0.1:8200/v1/sys/health
 curl -fsS http://127.0.0.1:3000/api/health
 curl -fsS http://127.0.0.1:8080/healthz || curl -fsS http://127.0.0.1:8080/api/healthz
+sudo docker compose --env-file "$OPS_DIR/docker/.env.ops.prod" -f "$OPS_DIR/docker/compose.ops.prod.yml" ps redpanda
 ```
 
 If DNS is already in place, also verify the public endpoints you decided to expose.
@@ -264,9 +285,10 @@ Expected result:
 - OpenBao responds
 - Grafana responds
 - Tolgee responds
+- Redpanda is running on the shared Docker network for downstream app repos
 - the deploy workflow has finished successfully
 
-## 11. Next Step
+## 12. Next Step
 
 After `platform-ops` is deployed and OpenBao is initialized, continue with:
 

@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Git ref to deploy (branch, tag, or SHA)"
+        description: 'Git ref to deploy (branch, tag, or SHA)'
         required: true
         default: main
         type: string
       release_tag:
-        description: "Optional release tag label for this ops bundle (manual dispatch only; defaults to ops-<run_number>-<run_attempt>)"
+        description: 'Optional release tag label for this ops bundle (manual dispatch only; defaults to ops-<run_number>-<run_attempt>)'
         required: false
         type: string
   release:

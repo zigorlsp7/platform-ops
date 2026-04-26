@@ -5,7 +5,7 @@ Shared operations and infrastructure repository for platform services.
 ## Scope
 
 - Terraform infrastructure for AWS deployment
-- Ops Docker stack (OpenBao, Prometheus, Grafana, Loki, Tolgee, OTel, Alertmanager, Jaeger)
+- Ops Docker stack (OpenBao, Redpanda, Prometheus, Grafana, Loki, Tolgee, OTel, Alertmanager, Jaeger)
 - Deployment orchestration workflows and scripts
 
 ## Docker Config Layout
@@ -19,7 +19,6 @@ Service configs are grouped under per-service folders in `docker/`:
 - `docker/otel/`
 - `docker/prometheus/`
 - `docker/tolgee/`
-
 
 ## Husky Commit Checks
 
@@ -93,8 +92,10 @@ npm run local:reset
 ## Production Deployment
 
 1. Configure GitHub environment `production` in `platform-ops`:
+
 - secret: `AWS_DEPLOY_ROLE_ARN`
 - vars: `AWS_REGION`, `AWS_DEPLOY_BUCKET`, `AWS_DEPLOY_INSTANCE_ID`, `AWS_SSM_OPS_PREFIX`
+
 2. Run workflow `.github/workflows/deploy-ops.yml` with `ref=main`.
 3. Validate target host services using SSM and health endpoints.
 
@@ -111,6 +112,7 @@ Default local URLs once tunnels are open:
 Notes:
 
 - Tolgee auth depends on `docker/tolgee/config.yaml` plus `spring.config.additional-location` in compose (configured in this repo).
+- The shared Redpanda broker is part of this repo's ops stack and is reachable on the shared Docker network as `platform-redpanda:9092`.
 - Prometheus and Jaeger UIs are not exposed; use Grafana for metrics and traces.
 - Alert status is available in Grafana via the Alertmanager datasource.
 
