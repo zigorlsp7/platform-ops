@@ -40,5 +40,11 @@ gpool_ecr_api_repository_name  = "gpool/prod/api"
 gpool_ecr_web_repository_name  = "gpool/prod/web"
 gpool_ssm_app_parameter_prefix = "/gpool/prod/app"
 
+# Dedicated notifications deploy role + repository.
+notifications_github_repository        = "your-org/notifications"
+notifications_github_environment       = "production"
+notifications_ecr_api_repository_name  = "notifications/prod/api"
+notifications_ssm_app_parameter_prefix = "/notifications/prod/app"
+
 # Parameter prefixes consumed by scripts/prod-deploy-remote.sh.
 ssm_ops_parameter_prefix = "/platform-ops/prod/ops"
