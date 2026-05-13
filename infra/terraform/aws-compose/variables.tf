@@ -207,6 +207,35 @@ variable "gpool_ssm_app_parameter_prefix" {
   }
 }
 
+variable "notifications_github_repository" {
+  description = "GitHub repository in ORG/REPO format allowed to assume the dedicated notifications deploy role."
+  type        = string
+  default     = "zigorlsp7/notifications"
+}
+
+variable "notifications_github_environment" {
+  description = "GitHub Environment name used by the dedicated notifications deploy workflow trust policy."
+  type        = string
+  default     = "production"
+}
+
+variable "notifications_ecr_api_repository_name" {
+  description = "Optional ECR repository name for notifications API image."
+  type        = string
+  default     = "notifications/prod/api"
+}
+
+variable "notifications_ssm_app_parameter_prefix" {
+  description = "SSM path prefix for notifications app env values, e.g. /notifications/prod/app."
+  type        = string
+  default     = "/notifications/prod/app"
+
+  validation {
+    condition     = startswith(var.notifications_ssm_app_parameter_prefix, "/")
+    error_message = "notifications_ssm_app_parameter_prefix must start with '/'."
+  }
+}
+
 variable "tags" {
   description = "Extra tags applied to resources."
   type        = map(string)
