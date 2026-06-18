@@ -3,7 +3,7 @@
 Use this runbook when you want to tear down the AWS production platform and stop ongoing AWS cost.
 
 This removes the shared infrastructure created by `platform-ops`.
-That means production for `cv`, `gpool`, and `notifications` goes down too because those repos depend on the shared EC2 host, ingress, OpenBao instance, and observability stack.
+That means production for `gpool`, and `notifications` goes down too because those repos depend on the shared EC2 host, ingress, OpenBao instance, and observability stack.
 
 ## 1. What This Destroys
 
@@ -151,8 +151,6 @@ TFSTATE_BUCKET="$(terraform -chdir=infra/terraform/bootstrap output -raw state_b
 for repo_url in \
   "$(terraform -chdir=infra/terraform/aws-compose output -raw api_ecr_repository_url)" \
   "$(terraform -chdir=infra/terraform/aws-compose output -raw web_ecr_repository_url)" \
-  "$(terraform -chdir=infra/terraform/aws-compose output -raw cv_api_ecr_repository_url)" \
-  "$(terraform -chdir=infra/terraform/aws-compose output -raw cv_ui_ecr_repository_url)" \
   "$(terraform -chdir=infra/terraform/aws-compose output -raw gpool_api_ecr_repository_url)" \
   "$(terraform -chdir=infra/terraform/aws-compose output -raw gpool_web_ecr_repository_url)"
 do
@@ -214,7 +212,6 @@ delete_ssm_path() {
 }
 
 delete_ssm_path /platform-ops/prod/ops
-delete_ssm_path /cv/prod/app
 delete_ssm_path /gpool/prod/app
 delete_ssm_path /notifications/prod/app
 ```
@@ -270,7 +267,7 @@ aws ec2 describe-security-groups \
 
 aws ecr describe-repositories \
   --query 'repositories[].repositoryName' \
-  --output text | tr '\t' '\n' | rg '^(platform-ops/prod|cv/prod|gpool/prod|notifications/)'
+  --output text | tr '\t' '\n' | rg '^(platform-ops/prod|gpool/prod|notifications/)'
 
 aws s3api list-buckets \
   --query 'Buckets[].Name' \
@@ -278,12 +275,6 @@ aws s3api list-buckets \
 
 aws ssm get-parameters-by-path \
   --path /platform-ops/prod/ops \
-  --recursive \
-  --query 'Parameters[].Name' \
-  --output json
-
-aws ssm get-parameters-by-path \
-  --path /cv/prod/app \
   --recursive \
   --query 'Parameters[].Name' \
   --output json
@@ -302,7 +293,7 @@ aws ssm get-parameters-by-path \
 
 aws iam list-roles \
   --query 'Roles[].RoleName' \
-  --output text | tr '\t' '\n' | rg '^(platform-ops-prod-|cv-prod-github-deploy$|gpool-prod-github-deploy$)'
+  --output text | tr '\t' '\n' | rg '^(platform-ops-prod-|gpool-prod-github-deploy$)'
 
 aws iam list-instance-profiles \
   --query 'InstanceProfiles[].InstanceProfileName' \
@@ -321,6 +312,6 @@ Use the AWS resource checks above as the immediate source of truth.
 
 You may also want to remove:
 
-- GitHub environment variables and secrets in `platform-ops`, `cv`, `gpool`, and `notifications`
+- GitHub environment variables and secrets in `platform-ops`, `gpool`, and `notifications`
 - DNS records pointing at the old EC2 public IP or DNS name
 - any local notes containing OpenBao unseal keys or root tokens if they are no longer needed

@@ -359,8 +359,6 @@ for key in "${required_ssm_secret_keys[@]}"; do
 done
 
 ingress_domain_keys=(
-  CV_WEB_DOMAIN
-  CV_API_DOMAIN
   GPOOL_WEB_DOMAIN
   GPOOL_API_DOMAIN
   OPS_GRAFANA_DOMAIN

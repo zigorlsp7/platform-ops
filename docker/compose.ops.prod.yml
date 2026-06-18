@@ -1,5 +1,11 @@
 name: platform-ops-prod
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"  
+    
 services:
   jaeger:
     image: jaegertracing/all-in-one:1.53
@@ -148,8 +154,6 @@ services:
       - '80:80'
       - '443:443'
     environment:
-      CV_WEB_DOMAIN: ${CV_WEB_DOMAIN}
-      CV_API_DOMAIN: ${CV_API_DOMAIN}
       GPOOL_WEB_DOMAIN: ${GPOOL_WEB_DOMAIN}
       GPOOL_API_DOMAIN: ${GPOOL_API_DOMAIN}
       OPS_GRAFANA_DOMAIN: ${OPS_GRAFANA_DOMAIN}
@@ -163,6 +167,21 @@ services:
       - grafana
       - tolgee
       - openbao
+    networks: [ops_shared]
+    
+  alloy:
+    image: grafana/alloy:v1.12.0
+    restart: unless-stopped
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ops-local-alloy-data:/var/lib/alloy/data
+    depends_on:
+      - loki
     networks: [ops_shared]
 
 networks:
@@ -179,3 +198,4 @@ volumes:
   ops-prod-redpanda-data:
   ops-prod-caddy-data:
   ops-prod-caddy-config:
+  ops-local-alloy-data:
