@@ -1,7 +1,7 @@
 # Cloud First Deploy (platform-ops)
 
 Use this runbook when you are building the production platform from scratch on AWS.
-Complete this repo first. The application repos (`cv`, `gpool`, `notifications`) depend on the infrastructure, ingress, OpenBao instance, shared Redpanda broker, and shared observability services created here.
+Complete this repo first. The application repos (`gpool`, `notifications`) depend on the infrastructure, ingress, OpenBao instance, shared Redpanda broker, and shared observability services created here.
 For full teardown later, use `docs/cloud-destroy.md`.
 
 ## 1. What You Are Building
@@ -57,8 +57,6 @@ At minimum, verify:
 
 - `github_repository = "zigorlsp7/platform-ops"`
 - `github_environment = "production"`
-- `cv_github_repository = "zigorlsp7/cv"`
-- `cv_github_environment = "production"`
 - `gpool_github_repository = "zigorlsp7/gpool"`
 - `gpool_github_environment = "production"`
 
@@ -99,8 +97,6 @@ After apply, capture these outputs:
 ```bash
 terraform -chdir=infra/terraform/aws-compose output -json github_actions_variables | jq .
 terraform -chdir=infra/terraform/aws-compose output github_deploy_role_arn
-terraform -chdir=infra/terraform/aws-compose output -json cv_github_actions_variables | jq .
-terraform -chdir=infra/terraform/aws-compose output cv_github_deploy_role_arn
 terraform -chdir=infra/terraform/aws-compose output -json gpool_github_actions_variables | jq .
 terraform -chdir=infra/terraform/aws-compose output gpool_github_deploy_role_arn
 ```
@@ -109,7 +105,7 @@ Why these matter:
 
 - `github_actions_variables` populates the GitHub `production` environment for `platform-ops`
 - `github_deploy_role_arn` becomes a GitHub secret in `platform-ops`
-- the `cv_*` and `gpool_*` outputs are needed later when you configure those repos
+- the `gpool_*` outputs are needed later when you configure those repos
 
 ## 5. Configure GitHub
 
@@ -220,7 +216,7 @@ Then:
 2. log in with token auth using `Initial Root Token`
 3. enable `kv` v2 at path `kv` if it does not already exist
 
-This is the production secret store used later by `cv`, `gpool`, and `notifications`.
+This is the production secret store used later by `gpool`, and `notifications`.
 The shared Redpanda broker deployed by `platform-ops` is also what those repos use for Kafka-based notifications.
 
 ## 9. Translation Promotion Model
@@ -240,15 +236,13 @@ Operational rule:
 - production Tolgee should be treated as a promoted runtime target
 - do not maintain separate conflicting truths in git, local Tolgee, and prod Tolgee
 
-The downstream app runbooks in `cv` and `gpool` document the repo-specific commands and GitHub settings for this promotion flow.
+The downstream app runbooks in `gpool` document the repo-specific commands and GitHub settings for this promotion flow.
 
 ## 10. Configure DNS And Ingress
 
 `platform-ops` owns the shared public ingress.
 These domains come from `docker/.env.ops.prod`:
 
-- `CV_WEB_DOMAIN`
-- `CV_API_DOMAIN`
 - `GPOOL_WEB_DOMAIN`
 - `GPOOL_API_DOMAIN`
 - `OPS_GRAFANA_DOMAIN`
@@ -292,6 +286,5 @@ Expected result:
 
 After `platform-ops` is deployed and OpenBao is initialized, continue with:
 
-- `cv/docs/cloud-first-deploy.md`
 - `gpool/docs/cloud-first-deploy.md`
 - `notifications/docs/cloud-first-deploy.md`

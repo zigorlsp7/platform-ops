@@ -163,6 +163,21 @@ services:
       - '18081:8080'
     networks: [ops_shared]
 
+  alloy:
+    image: grafana/alloy:v1.12.0
+    restart: unless-stopped
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ops-local-alloy-data:/var/lib/alloy/data
+    depends_on:
+      - loki
+    networks: [ops_shared]
+
 networks:
   ops_shared:
     name: platform_ops_shared
@@ -174,3 +189,4 @@ volumes:
   ops-local-tolgee-data:
   ops-local-openbao-data:
   ops-local-redpanda-data:
+  ops-local-alloy-data:

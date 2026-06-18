@@ -137,45 +137,10 @@ variable "github_environment" {
   default     = "production"
 }
 
-variable "cv_github_repository" {
-  description = "GitHub repository in ORG/REPO format allowed to assume the dedicated cv deploy role."
-  type        = string
-  default     = "zigorlsp7/cv"
-}
-
-variable "cv_github_environment" {
-  description = "GitHub Environment name used by the dedicated cv deploy workflow trust policy."
-  type        = string
-  default     = "production"
-}
-
-variable "cv_ecr_api_repository_name" {
-  description = "Optional ECR repository name for cv API image."
-  type        = string
-  default     = "cv/prod/api"
-}
-
-variable "cv_ecr_web_repository_name" {
-  description = "Optional ECR repository name for cv Web image."
-  type        = string
-  default     = "cv/prod/web"
-}
-
-variable "cv_ssm_app_parameter_prefix" {
-  description = "SSM path prefix for cv app env values, e.g. /cv/prod/app."
-  type        = string
-  default     = "/cv/prod/app"
-
-  validation {
-    condition     = startswith(var.cv_ssm_app_parameter_prefix, "/")
-    error_message = "cv_ssm_app_parameter_prefix must start with '/'."
-  }
-}
-
 variable "gpool_github_repository" {
   description = "GitHub repository in ORG/REPO format allowed to assume the dedicated gpool deploy role."
   type        = string
-  default     = "zigorlsp7/gpool"
+  default     = "zigordev/gpool"
 }
 
 variable "gpool_github_environment" {
@@ -210,7 +175,7 @@ variable "gpool_ssm_app_parameter_prefix" {
 variable "notifications_github_repository" {
   description = "GitHub repository in ORG/REPO format allowed to assume the dedicated notifications deploy role."
   type        = string
-  default     = "zigorlsp7/notifications"
+  default     = "zigordev/notifications"
 }
 
 variable "notifications_github_environment" {

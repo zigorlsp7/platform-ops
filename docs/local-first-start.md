@@ -1,7 +1,7 @@
 # Local First Start (platform-ops)
 
 Use this runbook when you are creating the full local platform from scratch.
-Start here before `cv`, `gpool`, or `notifications`, because those repos depend on the shared services started by `platform-ops`.
+Start here before `gpool`, or `notifications`, because those repos depend on the shared services started by `platform-ops`.
 
 ## 1. What You Are Building
 
@@ -124,7 +124,7 @@ After unsealing:
 
 ## 6. Enable The `kv` Secrets Engine
 
-The app repos expect OpenBao KV v2 secrets under paths like `kv/cv`, `kv/gpool`, and `kv/notifications`.
+The app repos expect OpenBao KV v2 secrets under paths like `kv/gpool`, and `kv/notifications`.
 
 In the OpenBao UI:
 
@@ -274,6 +274,5 @@ docker compose --env-file docker/.env.ops.local -f docker/compose.ops.local.yml 
 
 After `platform-ops` is ready, continue with:
 
-- `cv/docs/local-first-start.md`
 - `gpool/docs/local-first-start.md`
 - `notifications/docs/local-first-start.md`
