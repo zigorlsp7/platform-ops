@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/zigordev/platform-ops/compare/v1.8.0...v1.9.0) (2026-06-18)
+
+
+### Features
+
+* centralized logs generation ([#66](https://github.com/zigordev/platform-ops/issues/66)) ([225016b](https://github.com/zigordev/platform-ops/commit/225016be302a8812febd42191eeb727d48f9aac8))
+
 ## [1.8.0](https://github.com/zigorlsp7/platform-ops/compare/v1.7.0...v1.8.0) (2026-05-13)
 
 
