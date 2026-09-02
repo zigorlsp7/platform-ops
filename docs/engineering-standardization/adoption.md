@@ -56,8 +56,16 @@ Roughly one week.
    original audit was wrong about this. cv stays liveness-only, which is
    defensible since it has no database, though a Tolgee readiness probe would
    improve it.
-3. **Backups.** Nightly `pg_dump`, raft snapshot and Tolgee archive to S3. Then
-   restore one, once.
+3. **Backups — deferred, still outstanding.** Nightly `pg_dump` per database,
+   `bao operator raft snapshot` and a Tolgee volume archive to S3 with lifecycle
+   expiry, then a restore rehearsal.
+
+   The one Phase 1 item not done. Deferred rather than dropped, and the
+   highest-severity gap left in the estate: a single EC2 host holds every
+   database, every secret and every translation, and none of it is backed up.
+   Open decision — cron on the host, or a scheduled workflow using the existing
+   OIDC role.
+
 4. **Security headers** on all four browser surfaces, CSP in report-only.
 5. **Gitleaks and CodeQL** into trading-bot and notifications.
 6. **Dependabot** in all seven repositories.
