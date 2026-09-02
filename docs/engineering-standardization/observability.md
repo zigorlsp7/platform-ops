@@ -102,14 +102,24 @@ faithfully collects all of it and can tell you almost nothing about it.
 `GET /health` **probes dependencies**. It returns 200 only when the service can
 actually do its job.
 
-No repository currently does this. Every `/health` in the estate is a static 200,
-which means `up{job="gpool-api"} == 0` — the estate's only availability alert —
-catches a dead process and nothing else. A service whose database is gone reports
-healthy and pages nobody.
+Split liveness from readiness, and be strict about which is which:
 
-Use `@nestjs/terminus`. Probe the database, the broker, and any upstream the
-service cannot function without. Keep it under a second: a health check that
-times out under load turns a slow service into a down one.
+- **`/health/liveness`** answers "is the process running" and must **not** touch
+  a dependency. A liveness probe that fails on a database blip gets the container
+  killed, turning a brief outage into a crash loop.
+- **`/health/readiness`** answers "can this serve traffic" and probes the
+  database, the broker, and anything else the service cannot work without. This
+  is the one worth alerting on.
+- **`/health`** is readiness — it is what the compose healthcheck calls.
+
+Keep readiness under a second: a check that times out under load turns a slow
+service into a down one.
+
+gpool pings Postgres and returns 503 when it cannot; notifications checks
+Postgres and Kafka; trading-bot's control plane runs a database readiness check
+and exports it as a gauge. Those are the pattern. cv is liveness-only, which is
+defensible — it has no database — though a readiness probe on Tolgee would be
+better than none.
 
 Compose `healthcheck:` blocks and the Prometheus `up` alert both point at this
 endpoint, so its honesty is what makes them meaningful.
