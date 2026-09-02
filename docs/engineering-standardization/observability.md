@@ -115,14 +115,37 @@ Split liveness from readiness, and be strict about which is which:
 Keep readiness under a second: a check that times out under load turns a slow
 service into a down one.
 
-gpool pings Postgres and returns 503 when it cannot; notifications checks
-Postgres and Kafka; trading-bot's control plane runs a database readiness check
-and exports it as a gauge. Those are the pattern. cv is liveness-only, which is
-defensible — it has no database — though a readiness probe on Tolgee would be
-better than none.
+All five services now answer the same three paths with the same body.
 
-Compose `healthcheck:` blocks and the Prometheus `up` alert both point at this
-endpoint, so its honesty is what makes them meaningful.
+```
+GET /health/liveness   200
+  { "status": "ok", "service": "gpool-api" }
+
+GET /health/readiness  200 healthy / 503 degraded
+  { "status": "ok",    "service": "gpool-api",
+    "components": { "db": { "status": "up" } } }
+  { "status": "error", "service": "gpool-api",
+    "components": { "db": { "status": "down" } } }
+
+GET /health            same as readiness
+```
+
+`service` is the same string as `OTEL_SERVICE_NAME`, so health, metrics, traces
+and logs all identify a service identically.
+
+**Set the status code; do not throw.** Throwing routes the response through the
+global exception filter, which replaces the body with its own error shape — so
+the 503 arrives saying nothing about _which_ dependency failed, which is the
+only part worth having. Use `@Res({ passthrough: true })` and `res.status(503)`.
+
+**Health sits outside any global prefix.** gpool excludes it alongside
+`metrics` in `setGlobalPrefix`, so probes address the same paths everywhere
+rather than `/api/health` on one service and `/health` on the rest.
+
+Next.js apps keep `/api/health`: routes under `/api` is the framework's own
+convention, and a front end has no separate API to distinguish it from. cv is
+liveness-only, which is honest — it has no database, and a failed Tolgee fetch
+already falls back to committed messages rather than failing the page.
 
 ---
 

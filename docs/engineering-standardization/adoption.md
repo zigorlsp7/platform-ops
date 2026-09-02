@@ -29,6 +29,7 @@ close the gaps. Read from the working copies on 2026-09-02.
 | JSON logs                  | no            | no    | no   | ~           | yes           |
 | `traceId` in logs          | no            | no    | no   | no          | yes           |
 | Health probes deps         | liveness only | yes   | yes  | yes         | yes           |
+| Health shape converged     | yes           | yes   | yes  | yes         | yes           |
 | Dashboard                  | no            | yes   | no   | no          | yes           |
 | Graceful shutdown          | n/a           | no    | no   | ~           | yes           |
 | **Security**               |               |       |      |             |               |
