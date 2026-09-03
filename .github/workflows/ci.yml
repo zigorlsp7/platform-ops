@@ -45,8 +45,13 @@ jobs:
       - name: Format
         run: npm run format:check
 
+      # Not check:hooks: that also runs check:secrets, which shells out to a
+      # gitleaks binary present on a dev machine via brew but not on this
+      # runner. Secrets scanning already has its own job below with a proper
+      # install step — running it a second time here would be both redundant
+      # and broken.
       - name: Shell, workflow, compose and Terraform checks
-        run: npm run check:hooks
+        run: npm run check:shell && npm run check:workflows && npm run check:compose && npm run check:terraform
 
       - name: Typecheck the observability kit
         run: npm run typecheck
