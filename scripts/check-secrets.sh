@@ -37,7 +37,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   # with CI full-repo scans and repository gitleaks allowlist.
   staged_paths="$(
     git diff --cached --name-only \
-      | rg -v '(^|/)docker/\.env\..*\.local(\..*)?$|(^|/)\.env\..*\.local(\..*)?$' \
+      | grep -Ev '(^|/)docker/\.env\..*\.local(\..*)?$|(^|/)\.env\..*\.local(\..*)?$' \
       || true
   )"
 
