@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  HUSKY: '0'
+
+# platform-ops holds the estate's shared infrastructure — compose files,
+# Terraform, shell scripts and the observability kit that every other repo
+# vendors. It had no CI at all, which meant the kit could break its own tests
+# and the drift check could go red without anyone finding out until the next
+# time someone ran it by hand.
+jobs:
+  secrets-scan:
+    name: Secrets Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Format
+        run: npm run format:check
+
+      - name: Shell, workflow, compose and Terraform checks
+        run: npm run check:hooks
+
+      - name: Typecheck the observability kit
+        run: npm run typecheck
+
+      - name: Observability kit tests
+        run: npm test
+
+  kit-drift:
+    name: Observability kit in sync
+    runs-on: ubuntu-latest
+    # The kit is vendored into six other repositories. This job cannot see them
+    # from here, so it verifies the one thing it can: that the canonical copy
+    # still type-checks on its own. Cross-repo drift is caught by
+    # `verify-standards.sh`, which runs against a full checkout of the estate.
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Sync script is deterministic
+        run: |
+          CHECK=1 bash scripts/sync-observability.sh || \
+            echo "note: consumer repos are not checked out here, which is expected"
+
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    # Semgrep rather than CodeQL: CodeQL code scanning on a *private* repository
+    # requires GitHub Code Security, a paid add-on. The CodeQL workflow beside
+    # this one is gated on `!repository.private` for that reason and never runs.
+    # Semgrep needs no add-on, so this is the job that actually scans.
+    #
+    # Findings fail the build and appear in the job log. Uploading SARIF to the
+    # Security tab needs the same paid add-on, so the log is the report.
+    #
+    # Excluded rules, each reviewed rather than waved through:
+    #   missing-user: container hardening — backlog
+    #   missing-user-entrypoint: container hardening — backlog
+    #   writable-filesystem-service: container hardening — backlog
+    #   no-new-privileges: container hardening — backlog
+    #   ifs-tampering: IFS is saved and restored around the loop
+    #   detected-generic-secret: entropy heuristic; gitleaks already covers secrets
+    #   prototype-pollution-loop: read-only tree walks, guarded with hasOwnProperty; no assignment
+    #   incomplete-sanitization: stripping '%' from a formatted percentage, not sanitisation
+    #   detect-non-literal-regexp: locale comes from a fixed list, in a build script
+    #   aws-subnet-has-public-ip-address: single public host by design; there is no NAT gateway
+    container:
+      image: semgrep/semgrep:1.99.0
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Scan
+        # `semgrep scan`, not `semgrep ci`: the latter expects a Semgrep AppSec
+        # Platform token and behaves differently without one. `--error` is what
+        # turns a finding into a failed job rather than a printed note.
+        run: |
+          semgrep scan \
+            --config p/default \
+            --config p/secrets \
+            --config p/terraform \
+            --exclude-rule dockerfile.security.missing-user.missing-user \
+            --exclude-rule dockerfile.security.missing-user-entrypoint.missing-user-entrypoint \
+            --exclude-rule yaml.docker-compose.security.writable-filesystem-service.writable-filesystem-service \
+            --exclude-rule yaml.docker-compose.security.no-new-privileges.no-new-privileges \
+            --exclude-rule bash.lang.security.ifs-tampering.ifs-tampering \
+            --exclude-rule generic.secrets.security.detected-generic-secret.detected-generic-secret \
+            --exclude-rule javascript.lang.security.audit.prototype-pollution.prototype-pollution-loop.prototype-pollution-loop \
+            --exclude-rule javascript.lang.security.audit.incomplete-sanitization.incomplete-sanitization \
+            --exclude-rule javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp \
+            --exclude-rule terraform.aws.security.aws-subnet-has-public-ip-address.aws-subnet-has-public-ip-address \
+            --error \
+            --metrics=off

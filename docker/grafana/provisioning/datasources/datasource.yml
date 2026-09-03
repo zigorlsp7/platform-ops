@@ -19,3 +19,8 @@ datasources:
     url: http://jaeger:16686
     isDefault: false
     editable: false
+    # A stable uid so the Loki datasource can link log lines to their trace.
+    # Without it Grafana assigns a random one on every provision, and the
+    # derived field in loki.yml would point at a datasource that no longer
+    # exists after a restart.
+    uid: jaeger

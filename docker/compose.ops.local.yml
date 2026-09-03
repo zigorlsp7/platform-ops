@@ -2,11 +2,15 @@ name: platform-ops-local
 
 services:
   jaeger:
+    security_opt:
+      - no-new-privileges:true
     image: jaegertracing/all-in-one:1.53
     restart: unless-stopped
     networks: [ops_shared]
 
   otel-collector:
+    security_opt:
+      - no-new-privileges:true
     image: otel/opentelemetry-collector:0.98.0
     restart: unless-stopped
     command: ['--config=/etc/otelcol/config.yml']
@@ -20,6 +24,8 @@ services:
     networks: [ops_shared]
 
   alertmanager:
+    security_opt:
+      - no-new-privileges:true
     image: prom/alertmanager:v0.27.0
     restart: unless-stopped
     command:
@@ -29,6 +35,8 @@ services:
     networks: [ops_shared]
 
   prometheus:
+    security_opt:
+      - no-new-privileges:true
     image: prom/prometheus:v2.51.2
     restart: unless-stopped
     command:
@@ -42,6 +50,8 @@ services:
     networks: [ops_shared]
 
   grafana:
+    security_opt:
+      - no-new-privileges:true
     image: grafana/grafana:10.4.2
     restart: unless-stopped
     ports:
@@ -58,6 +68,8 @@ services:
     networks: [ops_shared]
 
   loki:
+    security_opt:
+      - no-new-privileges:true
     image: grafana/loki:2.9.8
     restart: unless-stopped
     command: ['-config.file=/etc/loki/config.yml']
@@ -69,6 +81,8 @@ services:
     networks: [ops_shared]
 
   tolgee:
+    security_opt:
+      - no-new-privileges:true
     image: tolgee/tolgee:v3.141.1
     restart: unless-stopped
     ports:
@@ -95,6 +109,8 @@ services:
     networks: [ops_shared]
 
   openbao:
+    security_opt:
+      - no-new-privileges:true
     image: openbao/openbao:2.5.0
     restart: unless-stopped
     cap_add:
@@ -113,6 +129,8 @@ services:
     networks: [ops_shared]
 
   redpanda:
+    security_opt:
+      - no-new-privileges:true
     image: docker.redpanda.com/redpandadata/redpanda:v24.3.10
     restart: unless-stopped
     command:
@@ -152,6 +170,8 @@ services:
           - platform-redpanda
 
   redpanda-console:
+    security_opt:
+      - no-new-privileges:true
     image: docker.redpanda.com/redpandadata/console:v2.8.1
     restart: unless-stopped
     depends_on:
@@ -164,6 +184,8 @@ services:
     networks: [ops_shared]
 
   alloy:
+    security_opt:
+      - no-new-privileges:true
     image: grafana/alloy:v1.12.0
     restart: unless-stopped
     command:
@@ -176,6 +198,32 @@ services:
       - ops-local-alloy-data:/var/lib/alloy/data
     depends_on:
       - loki
+    networks: [ops_shared]
+
+  # Host metrics. Without this there is no disk, memory or CPU signal at all —
+  # and a full disk has already taken Tolgee down twice in this estate.
+  # `--path.rootfs=/host` plus the read-only bind is the documented way to see
+  # the host's filesystems from inside a container.
+  node-exporter:
+    security_opt:
+      - no-new-privileges:true
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+      # Collect only real disk filesystems. Without this, the container runtime's
+      # own plumbing (virtiofs, fakeowner, erofs, fuse bridges) arrives as two
+      # dozen series all describing the same single disk.
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|erofs|fusectl|fuse\..*|fakeowner|selfowner|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|tmpfs|virtiofs.*)$$
+    pid: host
+    volumes:
+      # No `rslave` here, unlike prod: Docker Desktop's VM does not support
+      # shared mount propagation and refuses to start the container with it.
+      # What gets mounted on macOS is the Linux VM's root, not the Mac's — which
+      # is the filesystem that actually matters locally, since it is the VM
+      # filling up with build cache that has taken this stack down before.
+      - /:/host:ro
     networks: [ops_shared]
 
 networks:

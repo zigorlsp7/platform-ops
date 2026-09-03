@@ -340,6 +340,9 @@ fetch_ssm_secret_value() {
 required_non_secret_keys=(
   GRAFANA_ADMIN_USER
   TOLGEE_INITIAL_USERNAME
+  SMTP_SMARTHOST
+  SMTP_FROM
+  ALERT_EMAIL_TO
 )
 
 for key in "${required_non_secret_keys[@]}"; do
@@ -350,6 +353,8 @@ required_ssm_secret_keys=(
   GRAFANA_ADMIN_PASSWORD
   TOLGEE_INITIAL_PASSWORD
   TOLGEE_JWT_SECRET
+  SMTP_AUTH_USERNAME
+  SMTP_AUTH_PASSWORD
 )
 
 echo "[deploy] Loading required ops secrets from SSM prefix: $OPS_SSM_PREFIX"
@@ -369,6 +374,23 @@ for key in "${ingress_domain_keys[@]}"; do
   require_env_value_in_file "$OPS_ENV_FILE" "$key"
 done
 echo "[deploy] Central ingress enabled"
+
+echo "[deploy] Rendering Alertmanager config"
+if ! command -v envsubst >/dev/null 2>&1; then
+  retry 3 5 dnf install -y gettext >/dev/null 2>&1 || true
+fi
+if ! command -v envsubst >/dev/null 2>&1; then
+  echo "Missing command: envsubst (needed to render the Alertmanager config)" >&2
+  exit 1
+fi
+chmod +x scripts/render-alertmanager-config.sh
+set -a
+# shellcheck disable=SC1090
+. "$OPS_ENV_FILE"
+set +a
+./scripts/render-alertmanager-config.sh \
+  docker/alertmanager/config.prod.yml.tpl \
+  docker/alertmanager/config.prod.yml
 
 docker network create "platform_ops_shared" >/dev/null 2>&1 || true
 

@@ -36,6 +36,29 @@ loki.process "docker_json_logs" {
   stage.output {
     source = "output"
   }
+
+  // Second pass, over the application's own log line rather than Docker's
+  // envelope. Services that emit the estate's JSON format carry a `service`
+  // field equal to their `OTEL_SERVICE_NAME` — the same string Prometheus uses
+  // as `job` and health reports as `service`.
+  //
+  // Promoting it to a label called `app` is what lets one dashboard query
+  // Prometheus and Loki with a single variable.
+  //
+  // `traceId` is deliberately NOT a label: one stream per trace is unbounded
+  // cardinality. It stays in the line, where the Loki datasource's derived
+  // field turns it into a link to Jaeger.
+  stage.json {
+    expressions = {
+      app = "service",
+    }
+  }
+
+  stage.labels {
+    values = {
+      app = "app",
+    }
+  }
 }
 
 loki.source.file "docker_json_logs" {

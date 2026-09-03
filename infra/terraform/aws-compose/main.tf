@@ -134,6 +134,11 @@ resource "aws_ecr_repository" "api" {
   image_tag_mutability = "IMMUTABLE"
   force_delete         = false
   tags                 = merge(local.tags, { Name = "${local.name_prefix}-api-ecr" })
+
+  # Catches a vulnerable base image at push time rather than at audit time.
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
 resource "aws_ecr_repository" "web" {
@@ -141,6 +146,11 @@ resource "aws_ecr_repository" "web" {
   image_tag_mutability = "IMMUTABLE"
   force_delete         = false
   tags                 = merge(local.tags, { Name = "${local.name_prefix}-web-ecr" })
+
+  # Catches a vulnerable base image at push time rather than at audit time.
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
 resource "aws_ecr_lifecycle_policy" "api" {
@@ -188,6 +198,11 @@ resource "aws_ecr_repository" "gpool_api" {
   image_tag_mutability = "IMMUTABLE"
   force_delete         = false
   tags                 = merge(local.tags, { Name = "${local.name_prefix}-gpool-api-ecr" })
+
+  # Catches a vulnerable base image at push time rather than at audit time.
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
 resource "aws_ecr_repository" "gpool_web" {
@@ -195,6 +210,11 @@ resource "aws_ecr_repository" "gpool_web" {
   image_tag_mutability = "IMMUTABLE"
   force_delete         = false
   tags                 = merge(local.tags, { Name = "${local.name_prefix}-gpool-web-ecr" })
+
+  # Catches a vulnerable base image at push time rather than at audit time.
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
 resource "aws_ecr_lifecycle_policy" "gpool_api" {
@@ -242,6 +262,11 @@ resource "aws_ecr_repository" "notifications_api" {
   image_tag_mutability = "IMMUTABLE"
   force_delete         = false
   tags                 = merge(local.tags, { Name = "${local.name_prefix}-notifications-api-ecr" })
+
+  # Catches a vulnerable base image at push time rather than at audit time.
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
 resource "aws_ecr_lifecycle_policy" "notifications_api" {
@@ -413,6 +438,22 @@ resource "aws_instance" "app" {
     volume_type = "gp3"
     volume_size = var.root_volume_size_gb
     encrypted   = true
+  }
+
+  # IMDSv2 only.
+  #
+  # IMDSv1 answers an unauthenticated GET, so any server-side request forgery
+  # in a container on this host can read the instance metadata endpoint and walk
+  # away with the EC2 role's credentials. IMDSv2 requires a PUT to obtain a
+  # token first, which a forged GET cannot do. This host runs every database and
+  # both deploy roles, so the blast radius is the whole estate.
+  #
+  # The hop limit of 1 stops a container from reaching it at all: the packet
+  # would need a second hop out of the container network.
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
   }
 
   tags = merge(local.tags, { Name = "${local.name_prefix}-app-host" })

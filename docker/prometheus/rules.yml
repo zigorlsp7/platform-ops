@@ -1,18 +1,218 @@
 groups:
+  # ---------------------------------------------------------------------------
+  # RED metrics. Every HTTP service in the estate emits `http_requests_total`
+  # and `http_request_duration_seconds` under the same names and labels — in
+  # Express, Fastify and axum — so one expression covers all of them.
+  # ---------------------------------------------------------------------------
   - name: platform_api_http
     rules:
       - record: platform_api:http_rps:rate30s
         expr: sum by (job) (rate(http_requests_total[30s]))
 
+      # No clamp on the denominator here either. Clamping to 1 req/s divides a
+      # low-traffic service's error rate by 1 instead of by its real traffic,
+      # which understates it — a service serving 0.2 req/s where every single
+      # request fails would report a 20% error ratio on this dashboard rather
+      # than 100%. Unclamped, an idle service is NaN and simply does not plot.
       - record: platform_api:http_error_ratio:rate5m
         expr: |
           sum by (job) (rate(http_requests_total{status=~"5.."}[5m]))
           /
-          clamp_min(sum by (job) (rate(http_requests_total[5m])), 1)
+          sum by (job) (rate(http_requests_total[5m]))
 
       - record: platform_api:http_p95_seconds:5m
         expr: |
           histogram_quantile(
             0.95,
             sum by (job, le) (rate(http_request_duration_seconds_bucket[5m]))
+          )
+
+  # ---------------------------------------------------------------------------
+  # SLI: the ratio of good requests to all requests, over the windows a
+  # multi-window burn-rate alert needs.
+  #
+  # "Good" is defined once, here, as: not a 5xx. A 4xx is the caller's fault and
+  # must not spend the error budget — an endpoint being scanned for
+  # vulnerabilities would otherwise page us.
+  #
+  # The SLO is 99.5% availability, one target for every service. That is a
+  # deliberate simplification: it over-protects cv and under-protects
+  # trading-bot. The reasoning is in operations.md so the trade-off stays
+  # visible rather than becoming folklore.
+  #
+  # No clamp on the denominator. An earlier version clamped it to 1 to avoid
+  # 0/0, and that quietly inverted the metric: a service serving 0.29 req/s had
+  # its denominator forced up to 1, so a perfectly healthy service reported an
+  # SLI of 0.29 and sat permanently in violation. Every service in this estate
+  # is under 1 req/s most of the day, so the clamp did not guard against a false
+  # alarm — it manufactured one, continuously.
+  #
+  # Unclamped, an idle service divides 0 by 0, which is NaN, and Prometheus drops
+  # NaN from every comparison. An idle service therefore produces no alert at
+  # all, which is the right answer: nothing failed because nothing was asked.
+  # The `slo:traffic:*` rules below are what stop a *nearly* idle service from
+  # paging over a single unlucky request.
+  # ---------------------------------------------------------------------------
+  - name: slo_availability_sli
+    rules:
+      - record: slo:availability:ratio_rate5m
+        expr: |
+          sum by (job) (rate(http_requests_total{status!~"5.."}[5m]))
+          /
+          sum by (job) (rate(http_requests_total[5m]))
+
+      - record: slo:availability:ratio_rate30m
+        expr: |
+          sum by (job) (rate(http_requests_total{status!~"5.."}[30m]))
+          /
+          sum by (job) (rate(http_requests_total[30m]))
+
+      - record: slo:availability:ratio_rate1h
+        expr: |
+          sum by (job) (rate(http_requests_total{status!~"5.."}[1h]))
+          /
+          sum by (job) (rate(http_requests_total[1h]))
+
+      - record: slo:availability:ratio_rate2h
+        expr: |
+          sum by (job) (rate(http_requests_total{status!~"5.."}[2h]))
+          /
+          sum by (job) (rate(http_requests_total[2h]))
+
+      - record: slo:availability:ratio_rate6h
+        expr: |
+          sum by (job) (rate(http_requests_total{status!~"5.."}[6h]))
+          /
+          sum by (job) (rate(http_requests_total[6h]))
+
+      - record: slo:availability:ratio_rate1d
+        expr: |
+          sum by (job) (rate(http_requests_total{status!~"5.."}[1d]))
+          /
+          sum by (job) (rate(http_requests_total[1d]))
+
+      - record: slo:availability:ratio_rate3d
+        expr: |
+          sum by (job) (rate(http_requests_total{status!~"5.."}[3d]))
+          /
+          sum by (job) (rate(http_requests_total[3d]))
+
+  # ---------------------------------------------------------------------------
+  # SLI: latency. The SLO is "95% of requests complete within 500ms", so the
+  # indicator is the fraction of requests inside a bucket boundary rather than a
+  # quantile — a quantile cannot be meaningfully averaged across windows, and a
+  # ratio can.
+  #
+  # `le="0.5"` must be a real bucket edge or the selector matches nothing. It is:
+  # the shared histogram uses [0.005 … 0.25, 0.5, 1, 2, 5].
+  # ---------------------------------------------------------------------------
+  - name: slo_latency_sli
+    rules:
+      - record: slo:latency:ratio_rate5m
+        expr: |
+          sum by (job) (rate(http_request_duration_seconds_bucket{le="0.5"}[5m]))
+          /
+          sum by (job) (rate(http_request_duration_seconds_count[5m]))
+
+      - record: slo:latency:ratio_rate30m
+        expr: |
+          sum by (job) (rate(http_request_duration_seconds_bucket{le="0.5"}[30m]))
+          /
+          sum by (job) (rate(http_request_duration_seconds_count[30m]))
+
+      - record: slo:latency:ratio_rate1h
+        expr: |
+          sum by (job) (rate(http_request_duration_seconds_bucket{le="0.5"}[1h]))
+          /
+          sum by (job) (rate(http_request_duration_seconds_count[1h]))
+
+      - record: slo:latency:ratio_rate2h
+        expr: |
+          sum by (job) (rate(http_request_duration_seconds_bucket{le="0.5"}[2h]))
+          /
+          sum by (job) (rate(http_request_duration_seconds_count[2h]))
+
+      - record: slo:latency:ratio_rate6h
+        expr: |
+          sum by (job) (rate(http_request_duration_seconds_bucket{le="0.5"}[6h]))
+          /
+          sum by (job) (rate(http_request_duration_seconds_count[6h]))
+
+      - record: slo:latency:ratio_rate1d
+        expr: |
+          sum by (job) (rate(http_request_duration_seconds_bucket{le="0.5"}[1d]))
+          /
+          sum by (job) (rate(http_request_duration_seconds_count[1d]))
+
+      - record: slo:latency:ratio_rate3d
+        expr: |
+          sum by (job) (rate(http_request_duration_seconds_bucket{le="0.5"}[3d]))
+          /
+          sum by (job) (rate(http_request_duration_seconds_count[3d]))
+
+  # ---------------------------------------------------------------------------
+  # Traffic gate.
+  #
+  # A ratio computed over three requests is not a measurement, it is an anecdote:
+  # one 5xx out of three is a 33% error rate and a 66x burn, and paging on that
+  # is how an alert earns a filter rule in someone's inbox.
+  #
+  # 0.05 req/s is roughly three requests a minute — low enough that the quiet
+  # services here are still covered, high enough that a single stray request
+  # cannot page on its own.
+  # ---------------------------------------------------------------------------
+  - name: slo_traffic
+    rules:
+      - record: slo:traffic:rate5m
+        expr: sum by (job) (rate(http_request_duration_seconds_count[5m]))
+
+      - record: slo:traffic:rate30m
+        expr: sum by (job) (rate(http_request_duration_seconds_count[30m]))
+
+      - record: slo:traffic:rate1h
+        expr: sum by (job) (rate(http_request_duration_seconds_count[1h]))
+
+      - record: slo:traffic:rate2h
+        expr: sum by (job) (rate(http_request_duration_seconds_count[2h]))
+
+      - record: slo:traffic:rate6h
+        expr: sum by (job) (rate(http_request_duration_seconds_count[6h]))
+
+      - record: slo:traffic:rate1d
+        expr: sum by (job) (rate(http_request_duration_seconds_count[1d]))
+
+  # ---------------------------------------------------------------------------
+  # Host filesystems.
+  #
+  # Defined once here rather than inlined into four alerts, because getting the
+  # selector right turned out to be the whole problem. Written the obvious way —
+  # every `node_filesystem_*` series with a denylist of mountpoints — this
+  # produced sixteen identical alerts for one condition and paged on a read-only
+  # image that is *supposed* to be 100% full.
+  #
+  # Two corrections, both load-bearing:
+  #
+  #   * An allowlist of real disk filesystems, not a denylist of virtual ones.
+  #     A denylist cannot keep up: this host alone invents `fakeowner`,
+  #     `selfowner`, `virtiofs.virtiofs0` through `4`, `fuse.rawBridge` and
+  #     `erofs`, and a container runtime is free to add more tomorrow.
+  #
+  #   * `max by (instance, device)`, so one physical disk is one alert. `/var/lib`
+  #     and `/var/lib/docker` are the same `/dev/vda1`, and a disk that appears
+  #     under several mountpoints is still only one disk to go and clear.
+  # ---------------------------------------------------------------------------
+  - name: host_filesystem
+    rules:
+      - record: host:filesystem_avail:ratio
+        expr: |
+          max by (instance, device) (
+            node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs|zfs"}
+            /
+            node_filesystem_size_bytes{fstype=~"ext4|xfs|btrfs|zfs"}
+          )
+
+      - record: host:filesystem_avail_bytes:max
+        expr: |
+          max by (instance, device) (
+            node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs|zfs"}
           )

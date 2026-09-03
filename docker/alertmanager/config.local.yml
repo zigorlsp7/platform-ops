@@ -1,19 +1,32 @@
+# Local Alertmanager.
+#
+# Same route shape as prod, deliberately: severities that only exist in one
+# environment are severities whose routing is never exercised until it matters.
+# The receivers differ because sending real email from a laptop is noise —
+# locally an alert is something you look at in the Alertmanager UI at :9093.
+#
+# The previous version posted to http://host.docker.internal:5001/alerts, where
+# nothing has ever listened. `null` is honest about that; the UI still shows
+# every firing alert, which is the thing you actually want locally.
+
 global:
   resolve_timeout: 5m
 
 route:
-  receiver: local-webhook
-  group_by: ['alertname', 'severity']
+  receiver: local-sink
+  group_by: ['alertname', 'job']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 2h
   routes:
     - matchers:
         - severity="page"
-      receiver: local-webhook
+      receiver: local-sink
+      group_wait: 10s
+    - matchers:
+        - severity="ticket"
+      receiver: local-sink
+      group_wait: 1m
 
 receivers:
-  - name: local-webhook
-    webhook_configs:
-      - url: http://host.docker.internal:5001/alerts
-        send_resolved: true
+  - name: local-sink

@@ -7,3 +7,21 @@ datasources:
     url: http://loki:3100
     isDefault: false
     editable: false
+    jsonData:
+      # This is what turns Loki and Jaeger from two tools into one.
+      #
+      # Every log line the Node services emit carries the `traceId` of the span
+      # it was written inside — that is the whole point of the kit's JsonLogger.
+      # This derived field finds it and renders it as a button on the log line
+      # that opens the trace in Jaeger.
+      #
+      # Loki 2.9 has no structured metadata, so the id is matched out of the raw
+      # JSON with a regex rather than read from a label. A label would be worse
+      # anyway: one series per trace is unbounded cardinality, which is the
+      # classic way to kill a Loki install.
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"traceId":"([a-f0-9]{32})"'
+          url: '${__value.raw}'
+          datasourceUid: jaeger
+          urlDisplayLabel: 'View trace'

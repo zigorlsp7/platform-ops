@@ -1,31 +1,379 @@
-groups:
-  - name: platform_api_alerts
-    rules:
-      - alert: PlatformApiHighErrorRate
-        expr: platform_api:http_error_ratio:rate5m > 0.02
-        for: 5m
-        labels:
-          severity: page
-        annotations:
-          summary: '{{ $labels.job }} error rate > 2% (5m)'
-          description: 'The API for {{ $labels.job }} is returning too many 5xx responses over the last 5 minutes.'
-          runbook_url: 'https://github.com/zigordev/platform-ops/blob/main/docs/runbooks/api-high-error-rate.md'
+# Alerting rules for the estate.
+#
+# Two severities, and they map exactly onto the Alertmanager routes:
+#
+#   severity: page    — something is broken now, or the error budget is being
+#                       spent fast enough to be gone within days. Goes to email
+#                       immediately.
+#   severity: ticket  — real, but it can wait for the next working session.
+#                       Grouped and sent less often.
+#
+# There is no third severity. The previous ruleset had one alert labelled
+# `critical`, which matched no route at all and fell through to the default
+# receiver — a "critical" alert that was quietly the least urgent thing in the
+# file. Every label below is one of the two the routing knows about.
+#
+# Every alert carries a runbook_url, and every one of those URLs resolves to a
+# file in docs/runbooks/. An alert that links to a 404 is worse than an alert
+# with no link: it promises help that is not there.
 
-      - alert: PlatformApiHighLatencyP95
-        expr: platform_api:http_p95_seconds:5m > 0.3
+groups:
+  # ===========================================================================
+  # SLO burn rate.
+  #
+  # The SLO is 99.5% availability, so the error budget is 0.5% of requests. Burn
+  # rate is how fast that budget is being spent relative to spending it evenly
+  # over 30 days: 1x means it runs out exactly at the end of the window, 14.4x
+  # means it is gone in roughly two days.
+  #
+  # Each alert pairs a long window with a short one. The long window says the
+  # budget is genuinely being burned; the short window says it is *still*
+  # burning right now. Requiring both is what stops a brief spike paging you an
+  # hour after it recovered — the classic failure of a single-threshold alert,
+  # and the reason the two rules this replaces were unreliable enough to ignore.
+  # ===========================================================================
+  - name: slo_availability_burn
+    rules:
+      - alert: AvailabilityBudgetBurningFast
+        # 14.4x over 1h: the month's budget is gone in about two days.
+        expr: |
+          (1 - slo:availability:ratio_rate1h) > (14.4 * 0.005)
+          and
+          (1 - slo:availability:ratio_rate5m) > (14.4 * 0.005)
+          and
+          slo:traffic:rate1h > 0.05
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: '{{ $labels.job }} is burning its availability budget 14x too fast'
+          description: >-
+            Over the last hour {{ $labels.job }} returned enough 5xx responses to
+            exhaust a 30-day error budget in about two days, and it is still
+            failing now. The 99.5% SLO will be missed within days if this holds.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/availability-burn.md'
+
+      - alert: AvailabilityBudgetBurning
+        # 6x over 6h: the budget is gone in about five days.
+        expr: |
+          (1 - slo:availability:ratio_rate6h) > (6 * 0.005)
+          and
+          (1 - slo:availability:ratio_rate30m) > (6 * 0.005)
+          and
+          slo:traffic:rate6h > 0.05
+        for: 15m
+        labels:
+          severity: page
+        annotations:
+          summary: '{{ $labels.job }} is burning its availability budget 6x too fast'
+          description: >-
+            Sustained 5xx responses from {{ $labels.job }} over six hours. Slower
+            than the 14x alert, but still fast enough to miss the SLO this month.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/availability-burn.md'
+
+      - alert: AvailabilityBudgetErodingSlowly
+        # 3x over a day: worth a look, not worth an interruption.
+        expr: |
+          (1 - slo:availability:ratio_rate1d) > (3 * 0.005)
+          and
+          (1 - slo:availability:ratio_rate2h) > (3 * 0.005)
+          and
+          slo:traffic:rate1d > 0.05
+        for: 1h
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.job }} has been failing steadily for a day'
+          description: >-
+            A low but persistent 5xx rate on {{ $labels.job }}. Nothing is on
+            fire; something is wrong and has been for hours.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/availability-burn.md'
+
+  - name: slo_latency_burn
+    rules:
+      - alert: LatencyBudgetBurningFast
+        expr: |
+          (1 - slo:latency:ratio_rate1h) > (14.4 * 0.05)
+          and
+          (1 - slo:latency:ratio_rate5m) > (14.4 * 0.05)
+          and
+          slo:traffic:rate1h > 0.05
         for: 5m
         labels:
           severity: page
         annotations:
-          summary: '{{ $labels.job }} p95 latency > 300ms (5m)'
-          description: 'The API p95 latency for {{ $labels.job }} is above target over the last 5 minutes.'
-          runbook_url: 'https://github.com/zigordev/platform-ops/blob/main/docs/runbooks/api-high-latency.md'
-      - alert: GPoolApiDown
-        expr: up{job="gpool-api"} == 0
-        for: 30s
+          summary: '{{ $labels.job }} is far slower than its 500ms target'
+          description: >-
+            Well over 5% of requests to {{ $labels.job }} are taking longer than
+            500ms, and have been for an hour. The SLO allows 5%; this is
+            fourteen times that rate.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/latency-burn.md'
+
+      - alert: LatencyBudgetEroding
+        expr: |
+          (1 - slo:latency:ratio_rate6h) > (6 * 0.05)
+          and
+          (1 - slo:latency:ratio_rate30m) > (6 * 0.05)
+          and
+          slo:traffic:rate6h > 0.05
+        for: 30m
         labels:
-          severity: critical
-          app: gpool
+          severity: ticket
         annotations:
-          summary: "GPool API is down"
-          description: "Prometheus cannot scrape gpool-api:3000/metrics for more than 30 seconds."
+          summary: '{{ $labels.job }} is consistently slow'
+          description: >-
+            {{ $labels.job }} has been missing the 500ms target for a meaningful
+            share of requests over six hours.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/latency-burn.md'
+
+  # ===========================================================================
+  # Availability of the services themselves.
+  #
+  # `up` and `service_health_status` answer different questions and both are
+  # needed. `up == 0` means Prometheus cannot reach /metrics — the process is
+  # gone. `service_health_status` is what the service says about itself, and a
+  # process with a dead database still serves /metrics perfectly well, so `up`
+  # alone would never notice it. That gap was the single most misleading thing
+  # in the original alert set.
+  # ===========================================================================
+  - name: service_availability
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: '{{ $labels.job }} is not answering scrapes'
+          description: >-
+            Prometheus has not been able to reach {{ $labels.job }} at
+            {{ $labels.instance }} for two minutes. The process is down, or the
+            network to it is.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/service-down.md'
+
+      - alert: ServiceUnhealthy
+        # 0 = error. The service is up and telling you it cannot do its job.
+        expr: service_health_status == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: '{{ $labels.job }} reports itself unhealthy'
+          description: >-
+            {{ $labels.job }} is serving /metrics but its own health check
+            returns `error` — a required dependency is unreachable. Check
+            `service_component_up` to see which one.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/service-unhealthy.md'
+
+      - alert: ServiceDegraded
+        # 1 = degraded. Serving traffic, but something optional is broken —
+        # for the producers, that means email is silently not being queued.
+        # Nothing consumed this state before: Docker reads the 200 and calls the
+        # container healthy, and `up` stays 1.
+        expr: service_health_status == 1
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.job }} has been degraded for 15 minutes'
+          description: >-
+            {{ $labels.job }} is serving requests with an optional dependency
+            down — for gpool and kini this means outbound email is not being
+            queued. Users see nothing wrong, which is why this needs an alert
+            rather than a dashboard.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/service-degraded.md'
+
+      - alert: HealthSignalMissing
+        # The health gauges are written when /health is called — every ten
+        # seconds, by each container's own Docker healthcheck. That makes them a
+        # dependency, and an undetected dependency failure here would silently
+        # disable three alerts above: ServiceUnhealthy, ServiceDegraded and
+        # ComponentDown would all stop being able to fire, and the estate would
+        # look quieter than it is.
+        #
+        # So: a server that is being scraped but publishes no health gauge is
+        # itself a problem. The job list is explicit rather than inferred,
+        # because "which services are supposed to report health" is a decision,
+        # and inferring it would make this alert vanish exactly when a service is
+        # misconfigured.
+        expr: |
+          up{job=~"gpool-api|kini-api|notifications-api|trading-bot-control-plane"} == 1
+          unless on (job)
+          service_health_status
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.job }} is up but reports no health metric'
+          description: >-
+            {{ $labels.job }} is being scraped successfully but publishes no
+            `service_health_status`. Its /health endpoint is not being called, or
+            the handler no longer records. Until this is fixed, degraded and
+            unhealthy states for this service cannot be detected.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/health-signal-missing.md'
+
+      - alert: ComponentDown
+        expr: service_component_up == 0
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.job }} cannot reach {{ $labels.component }}'
+          description: >-
+            The {{ $labels.component }} dependency of {{ $labels.job }} has been
+            unreachable for five minutes.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/component-down.md'
+
+  # ===========================================================================
+  # Host and infrastructure.
+  #
+  # A full disk is not hypothetical here: it has taken Tolgee down twice, and
+  # the second time it also broke the local database of a product stack. These
+  # are the alerts that would have caught it hours earlier.
+  # ===========================================================================
+  - name: infrastructure
+    rules:
+      - alert: HostDiskFillingUp
+        expr: host:filesystem_avail:ratio < 0.15
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: 'Less than 15% free on {{ $labels.device }}'
+          description: >-
+            {{ $labels.device }} on {{ $labels.instance }} is above 85% full.
+            Docker build cache and image layers are the usual cause; `docker
+            builder prune -af` reclaims most of it.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/host-disk.md'
+
+      - alert: HostDiskCritical
+        expr: host:filesystem_avail:ratio < 0.05
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: 'Less than 5% free on {{ $labels.device }}'
+          description: >-
+            {{ $labels.device }} is nearly full. Postgres refuses to start when
+            it cannot write, so this takes databases down, not just builds.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/host-disk.md'
+
+      - alert: HostMemoryPressure
+        expr: |
+          (
+            node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes
+          ) < 0.10
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: 'Less than 10% memory available on {{ $labels.instance }}'
+          description: >-
+            Sustained memory pressure. ClickHouse is the first thing the kernel
+            kills here, and it takes market-data and research-backtesting with
+            it — neither of which has a memory limit set.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/host-memory.md'
+
+      - alert: HostFilesystemWillFillIn24h
+        # Rate of change rather than a level: catches a slow leak while there is
+        # still time to act, which a threshold alone does not. A threshold tells
+        # you at 85% and again at 95%, and never tells you how fast.
+        expr: predict_linear(host:filesystem_avail_bytes:max[6h], 24 * 3600) < 0
+        for: 1h
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.device }} will be full within a day at this rate'
+          description: >-
+            Extrapolating the last six hours, {{ $labels.device }} runs out of
+            space within 24 hours.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/host-disk.md'
+
+  # ===========================================================================
+  # Messaging.
+  #
+  # notifications consumes `notification.email.requested.v1`. A consumer that
+  # has dropped out of its group fails silently — mail piles up and nothing
+  # errors — which is exactly why its health check treats Kafka as required.
+  # ===========================================================================
+  - name: messaging
+    rules:
+      - alert: KafkaConsumerLagGrowing
+        expr: |
+          sum by (redpanda_group, redpanda_topic) (
+            redpanda_kafka_consumer_group_lag_sum
+          ) > 1000
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.redpanda_group }} is {{ $value | humanize }} messages behind'
+          description: >-
+            Consumer lag on {{ $labels.redpanda_topic }} has been above 1000 for
+            fifteen minutes. Either the consumer is slower than the producers or
+            it has stopped consuming.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/kafka-lag.md'
+
+      - alert: DeadLetterQueueGrowing
+        expr: increase(notifications_dlq_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: 'Notifications are being dead-lettered'
+          description: >-
+            {{ $value | humanize }} notifications moved to the dead-letter topic
+            in the last hour. Each one is an email a person expected and did not
+            receive.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/dead-letters.md'
+
+      - alert: RedpandaDown
+        expr: up{job="redpanda"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: 'Redpanda is not reachable'
+          description: >-
+            The broker every product publishes to is down. gpool and kini will
+            report `degraded`; notifications will report `error`.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/redpanda-down.md'
+
+  # ===========================================================================
+  # RUM. The browser half of the SLO story — a page can be perfectly available
+  # from the server's point of view and unusable in the hand.
+  # ===========================================================================
+  - name: rum
+    rules:
+      - alert: CoreWebVitalsRegressed
+        # p75 is the percentile Google grades Core Web Vitals on, and 2.5s is
+        # the boundary between "good" and "needs improvement" for LCP.
+        expr: |
+          histogram_quantile(
+            0.75,
+            sum by (job, le) (rate(rum_performance_seconds_bucket{metric_name="LCP"}[6h]))
+          ) > 2.5
+        for: 1h
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.job }} LCP p75 is above the 2.5s Core Web Vitals threshold'
+          description: >-
+            Real visitors are waiting more than 2.5 seconds for the main content
+            of {{ $labels.job }}. This is measured from browsers, not from CI.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/web-vitals.md'
+
+      - alert: RumIngestUnderAttack
+        # The ingest endpoint is public and unauthenticated by necessity. This
+        # is the one RUM metric whose labels the server controls, so it is the
+        # only one safe to alert on.
+        expr: sum by (job) (rate(rum_rejected_total{reason="rate_limited"}[5m])) > 1
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: '{{ $labels.job }} is rate-limiting RUM beacons'
+          description: >-
+            Sustained rejection of RUM beacons for exceeding the per-client rate
+            limit. Either a client is looping, or someone is probing the endpoint.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/rum-ingest.md'

