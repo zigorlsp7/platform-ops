@@ -2,10 +2,7 @@
   "uid": "service-overview",
   "title": "Service Overview",
   "description": "One dashboard for every service, selected by the $job variable. Replaces the per-service copies that had to be hand-edited each time a service was added.",
-  "tags": [
-    "platform",
-    "generated"
-  ],
+  "tags": ["platform", "generated"],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,

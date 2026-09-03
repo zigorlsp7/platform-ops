@@ -2,10 +2,7 @@
   "uid": "rum-overview",
   "title": "RUM Overview",
   "description": "Real User Monitoring for every UI in the estate, selected by $job. Fed by the shared observability kit; every label is allow-listed server-side because the values come from a browser.",
-  "tags": [
-    "platform",
-    "rum"
-  ],
+  "tags": ["platform", "rum"],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
