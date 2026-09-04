@@ -18,6 +18,13 @@ jobs:
   secrets-scan:
     name: Secrets Scan (Gitleaks)
     runs-on: ubuntu-latest
+    # gitleaks-action calls GET /pulls/{n}/commits to scope its scan to the PR's
+    # own commits. Dependabot-triggered runs get no implicit permissions beyond
+    # what's declared here — every Dependabot PR failed this job with a 403
+    # until this was added.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -35,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version: 24
           cache: npm
@@ -45,8 +52,22 @@ jobs:
       - name: Format
         run: npm run format:check
 
+      # check:terraform shells out to a terraform binary, which — unlike
+      # gitleaks below — has no other job installing it anywhere in this
+      # workflow. fmt -check needs no provider plugins or credentials, so the
+      # default (latest) version satisfies every module's `>= 1.6.0` with
+      # nothing further to configure.
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      # Not check:hooks: that also runs check:secrets, which shells out to a
+      # gitleaks binary present on a dev machine via brew but not on this
+      # runner. Secrets scanning already has its own job below with a proper
+      # install step — running it a second time here would be both redundant
+      # and broken.
       - name: Shell, workflow, compose and Terraform checks
-        run: npm run check:hooks
+        run: npm run check:shell && npm run check:workflows && npm run check:compose && npm run check:terraform
 
       - name: Typecheck the observability kit
         run: npm run typecheck
@@ -64,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version: 24
           cache: npm

@@ -8,7 +8,7 @@ A named dependency of a service has been unreachable for five minutes.
 `{{ component }}` says which: `db` or `kafka`.
 
 This alert overlaps `ServiceUnhealthy` and `ServiceDegraded` on purpose. Those
-report what the *service* concluded; this reports the raw fact per dependency,
+report what the _service_ concluded; this reports the raw fact per dependency,
 which is what you want when several services share one broker and you are trying
 to tell "the broker is down" from "one service cannot reach the broker".
 
@@ -19,7 +19,7 @@ Read it alongside the others:
 - Firing with `ServiceUnhealthy` → the dependency is required. Act now.
 - Firing with `ServiceDegraded` → optional. See
   [service-degraded.md](service-degraded.md).
-- Firing for one service while others are fine → the dependency is up and *this*
+- Firing for one service while others are fine → the dependency is up and _this_
   service cannot reach it. Network, credentials, or a stale connection pool.
 
 ## How to see
