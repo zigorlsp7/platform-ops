@@ -55,7 +55,7 @@ curl -s http://<service>/health
 ## What to do
 
 1. **Is there a healthcheck on the container?** `docker inspect <name> --format
-   '{{json .Config.Healthcheck}}'`. If it is null, that is the bug.
+'{{json .Config.Healthcheck}}'`. If it is null, that is the bug.
 2. **Does `/health` still respond?** If it 404s, the route moved — health lives
    at `/health`, off the API prefix, in every service.
 3. **Does the handler still call `recordHealth`?** The vendored kit can drift;

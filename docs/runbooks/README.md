@@ -16,30 +16,30 @@ inconvenient moment. Each one answers four questions in the same order:
 Nothing here is a decision tree. When the answer is "it depends", the runbook
 says what it depends on.
 
-| Alert | Runbook |
-| --- | --- |
-| `AvailabilityBudget*` | [availability-burn.md](availability-burn.md) |
-| `LatencyBudget*` | [latency-burn.md](latency-burn.md) |
-| `ServiceDown` | [service-down.md](service-down.md) |
-| `ServiceUnhealthy` | [service-unhealthy.md](service-unhealthy.md) |
-| `ServiceDegraded` | [service-degraded.md](service-degraded.md) |
-| `ComponentDown` | [component-down.md](component-down.md) |
-| `HostDisk*`, `HostFilesystemWillFillIn24h` | [host-disk.md](host-disk.md) |
-| `HostMemoryPressure` | [host-memory.md](host-memory.md) |
-| `KafkaConsumerLagGrowing` | [kafka-lag.md](kafka-lag.md) |
-| `DeadLetterQueueGrowing` | [dead-letters.md](dead-letters.md) |
-| `RedpandaDown` | [redpanda-down.md](redpanda-down.md) |
-| `CoreWebVitalsRegressed` | [web-vitals.md](web-vitals.md) |
-| `RumIngestUnderAttack` | [rum-ingest.md](rum-ingest.md) |
+| Alert                                      | Runbook                                      |
+| ------------------------------------------ | -------------------------------------------- |
+| `AvailabilityBudget*`                      | [availability-burn.md](availability-burn.md) |
+| `LatencyBudget*`                           | [latency-burn.md](latency-burn.md)           |
+| `ServiceDown`                              | [service-down.md](service-down.md)           |
+| `ServiceUnhealthy`                         | [service-unhealthy.md](service-unhealthy.md) |
+| `ServiceDegraded`                          | [service-degraded.md](service-degraded.md)   |
+| `ComponentDown`                            | [component-down.md](component-down.md)       |
+| `HostDisk*`, `HostFilesystemWillFillIn24h` | [host-disk.md](host-disk.md)                 |
+| `HostMemoryPressure`                       | [host-memory.md](host-memory.md)             |
+| `KafkaConsumerLagGrowing`                  | [kafka-lag.md](kafka-lag.md)                 |
+| `DeadLetterQueueGrowing`                   | [dead-letters.md](dead-letters.md)           |
+| `RedpandaDown`                             | [redpanda-down.md](redpanda-down.md)         |
+| `CoreWebVitalsRegressed`                   | [web-vitals.md](web-vitals.md)               |
+| `RumIngestUnderAttack`                     | [rum-ingest.md](rum-ingest.md)               |
 
 ## Where to look
 
-| Thing | Local | Prod |
-| --- | --- | --- |
-| Prometheus | <http://localhost:9090> | via the ops ingress |
-| Alertmanager | <http://localhost:9093> | not exposed; use email |
-| Grafana | <http://localhost:3001> | `OPS_GRAFANA_DOMAIN` |
-| Jaeger | <http://localhost:16686> | not exposed |
+| Thing        | Local                    | Prod                   |
+| ------------ | ------------------------ | ---------------------- |
+| Prometheus   | <http://localhost:9090>  | via the ops ingress    |
+| Alertmanager | <http://localhost:9093>  | not exposed; use email |
+| Grafana      | <http://localhost:3001>  | `OPS_GRAFANA_DOMAIN`   |
+| Jaeger       | <http://localhost:16686> | not exposed            |
 
 Locally, alerts go nowhere by design — `config.local.yml` routes everything to a
 null receiver. Alertmanager's own UI is the local delivery channel.
