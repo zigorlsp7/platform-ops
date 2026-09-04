@@ -30,10 +30,10 @@ in [`docker/prometheus/alerts.yml`](../../docker/prometheus/alerts.yml).
 Two severities, and they exist because they map onto two different human
 reactions:
 
-| Severity | Means | Delivery |
-| --- | --- | --- |
-| `page` | Broken now, or the budget will be gone within days | Email immediately, repeated hourly |
-| `ticket` | Real, can wait for the next working session | Batched, repeated daily |
+| Severity | Means                                              | Delivery                           |
+| -------- | -------------------------------------------------- | ---------------------------------- |
+| `page`   | Broken now, or the budget will be gone within days | Email immediately, repeated hourly |
+| `ticket` | Real, can wait for the next working session        | Batched, repeated daily            |
 
 There is no third. An earlier ruleset had one alert labelled `critical`, which
 matched no Alertmanager route and fell through to the default receiver — making

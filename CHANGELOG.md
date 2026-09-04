@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.11.3](https://github.com/zigordev/platform-ops/compare/v1.11.2...v1.11.3) (2026-09-03)
+
+
+### Bug Fixes
+
+* **ci:** grant gitleaks the pull-requests:read it needs on Dependabot PRs ([e6d56f6](https://github.com/zigordev/platform-ops/commit/e6d56f60602ace8366d1fefe3bd7bf6f329dc73c))
+
+## [1.11.2](https://github.com/zigordev/platform-ops/compare/v1.11.1...v1.11.2) (2026-09-03)
+
+
+### Bug Fixes
+
+* **ci:** install terraform in the Quality job, nothing else provides it ([cfdc804](https://github.com/zigordev/platform-ops/commit/cfdc804f4c20cdf8584c4c11f3787d882af010dc))
+
+## [1.11.1](https://github.com/zigordev/platform-ops/compare/v1.11.0...v1.11.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **ci:** stop the Quality job running a gitleaks check with no gitleaks ([2ea8aba](https://github.com/zigordev/platform-ops/commit/2ea8aba8aaecc9b13665711a47c174d1bea9e4db))
+
 ## [1.11.0](https://github.com/zigordev/platform-ops/compare/v1.10.0...v1.11.0) (2026-09-03)
 
 

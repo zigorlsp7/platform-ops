@@ -12,13 +12,13 @@ month, or a small constant trickle.
 
 Three thresholds, three meanings:
 
-| Alert | Burn rate | Budget gone in | Reaction |
-| --- | --- | --- | --- |
-| `…BurningFast` | 14.4x | ~2 days | Now |
-| `…Burning` | 6x | ~5 days | Today |
-| `…ErodingSlowly` | 3x | ~10 days | This week |
+| Alert            | Burn rate | Budget gone in | Reaction  |
+| ---------------- | --------- | -------------- | --------- |
+| `…BurningFast`   | 14.4x     | ~2 days        | Now       |
+| `…Burning`       | 6x        | ~5 days        | Today     |
+| `…ErodingSlowly` | 3x        | ~10 days       | This week |
 
-Each one requires a long window *and* a short window to be over the line, so a
+Each one requires a long window _and_ a short window to be over the line, so a
 firing alert means it is still happening — not that it happened earlier.
 
 ## Whether it matters

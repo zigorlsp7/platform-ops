@@ -14,7 +14,7 @@ embedded Postgres could not write, which broke translations, which broke a
 product's startup. Both times the cause was Docker build cache.
 
 `HostFilesystemWillFillIn24h` exists because a threshold alone tells you at 85%
-and again at 95% and never tells you *how fast*. A slow leak and a runaway log
+and again at 95% and never tells you _how fast_. A slow leak and a runaway log
 look identical at a single point in time.
 
 ## How to see
