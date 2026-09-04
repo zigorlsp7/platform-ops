@@ -52,11 +52,10 @@ jobs:
       - name: Format
         run: npm run format:check
 
-      # check:terraform shells out to a terraform binary, which — unlike
-      # gitleaks below — has no other job installing it anywhere in this
-      # workflow. fmt -check needs no provider plugins or credentials, so the
-      # default (latest) version satisfies every module's `>= 1.6.0` with
-      # nothing further to configure.
+      # Backs both the fmt-check below and the two validate steps further down.
+      # Neither needs credentials or a backend, so the default (latest)
+      # version satisfies every module's `>= 1.6.0` with nothing further to
+      # configure.
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
           terraform_wrapper: false
@@ -68,6 +67,16 @@ jobs:
       # and broken.
       - name: Shell, workflow, compose and Terraform checks
         run: npm run check:shell && npm run check:workflows && npm run check:compose && npm run check:terraform
+
+      - name: Terraform validate (bootstrap)
+        run: |
+          terraform -chdir=infra/terraform/bootstrap init -backend=false -input=false
+          terraform -chdir=infra/terraform/bootstrap validate
+
+      - name: Terraform validate (aws-compose)
+        run: |
+          terraform -chdir=infra/terraform/aws-compose init -backend=false -input=false
+          terraform -chdir=infra/terraform/aws-compose validate
 
       - name: Typecheck the observability kit
         run: npm run typecheck
