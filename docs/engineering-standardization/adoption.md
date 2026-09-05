@@ -287,6 +287,9 @@ real problems.
    the design system, which the console had been reaching through the old
    repo-wide `@/*` — that stopped working the moment `@/` meant `src/`.
 
+   That alias has since been removed: design-system is a package, so its imports
+   are bare specifiers resolved through `node_modules` like any other dependency.
+
 6. **Contract drift for kini.** Done, with the `integration-e2e` job it needed:
    kini's CI validated its compose file but never started a stack, so there was
    no running API to export a spec from.
@@ -335,11 +338,26 @@ Started, and further along than "ongoing" suggests.
    window. It found one immediately: the local OpenBao token expires
    2026-09-26.
 
-4. **Visual regression.** Done on cv. Three structural snapshots rather than one
-   per component — a screenshot suite nobody maintains catches nothing. The
-   design system is vendored by copy, so a token change arrives by a sync rather
-   than a version bump and nothing else would notice it. Baselines exist for
-   both macOS and Linux, generated in the matching Playwright container.
+4. **Visual regression.** Tried on cv, then removed — and the reason it was
+   removed is the more useful entry.
+
+   It was built to cover one specific blind spot: the design system was vendored
+   by copy, so a token change arrived as a silent file sync rather than a version
+   bump, and nothing in the pipeline would have noticed. Screenshots were the
+   only thing watching.
+
+   That blind spot no longer exists. design-system is a package now, pinned by
+   tag, so a token change arrives as a dependency bump — a visible diff in a
+   reviewable pull request, in every consumer, with a version number attached.
+   The thing the screenshots were compensating for got fixed at the source.
+
+   What remained was the cost: baselines per platform (macOS and Linux, each
+   generated in a matching Playwright container), rebaselining on any
+   intentional change, and the standing temptation to run `--update-snapshots`
+   on a red suite, which converts a failing test into a passing one that checks
+   nothing. A suite that is expensive to keep honest and no longer covers a real
+   gap is worse than no suite: it spends attention and returns confidence it
+   hasn't earned.
 
 5. **Feature flags.** Done, in the shared kit. Deliberately not a service:
    per-user targeting and gradual rollout are what LaunchDarkly solves and

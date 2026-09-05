@@ -139,17 +139,45 @@ else
   FAILED=$((FAILED+1))
 fi
 
-# --- the vendored design-system tokens have not drifted ---------------------
-# The gap this closes: a WCAG contrast fix landed in cv's copy of
-# tokens/colors.css and, with no sync and no check, never reached gpool, kini
-# or trading-bot — three products stayed on colors that fail 4.5:1. Vendoring
-# without a drift check is not vendoring, it's four unrelated forks that
-# happen to start identical.
-printf '\n\033[1mdesign-system tokens\033[0m\n'
-if CHECK=1 bash "$ROOT/platform-ops/scripts/sync-design-system.sh" 2>/dev/null; then
-  :
-else
-  FAILED=$((FAILED+1))
+# --- the design-system is a dependency, and one version of it ---------------
+# This used to be a token-drift check over four vendored copies, because a
+# WCAG contrast fix had landed in cv's copy of colors.css and never reached
+# the other three. The copies are gone — design-system is a package now — so
+# the failure mode moved rather than disappeared: a consumer that re-vendors
+# it, or four consumers sitting on four different tags, gets back exactly the
+# divergence the copies produced.
+printf '\n\033[1mdesign-system consumers\033[0m\n'
+DS_VERSIONS=""
+for repo in cv gpool kini trading-bot; do
+  d="$ROOT/$repo"
+  [ -d "$d/.git" ] || continue
+
+  # A re-vendored tree is the old bug walking back in. Look for actual sources,
+  # not the directory: an emptied one lingers on any machine that dropped a
+  # .DS_Store in it, and a check that cries wolf is a check people stop reading.
+  vendored=$(find "$d/apps" -maxdepth 2 -type d -name design-system -not -path '*/node_modules/*' 2>/dev/null \
+             | xargs -I{} find {} -name '*.jsx' -o -name 'styles.css' 2>/dev/null | head -1)
+  [ -n "$vendored" ] && bad "$repo: vendored sources under ${vendored#"$d"/} — it should be a dependency"
+
+  pkg=$(find "$d/apps" -maxdepth 2 -name package.json -not -path '*/node_modules/*' 2>/dev/null \
+        | xargs grep -l '"design-system"' 2>/dev/null | head -1)
+  if [ -z "$pkg" ]; then
+    skip "$repo: does not use design-system"
+    continue
+  fi
+
+  ref=$(sed -n 's/.*"design-system": *"\([^"]*\)".*/\1/p' "$pkg" | head -1)
+  case "$ref" in
+    *'#'*) ok "$repo: ${ref##*#}"; DS_VERSIONS="$DS_VERSIONS ${ref##*#}" ;;
+    *)     bad "$repo: design-system is unpinned ($ref) — pin it to a tag" ;;
+  esac
+done
+
+distinct=$(printf '%s\n' $DS_VERSIONS | sort -u | wc -l | tr -d ' ')
+if [ "$distinct" -gt 1 ]; then
+  bad "consumers are on $distinct different versions:$(printf '%s\n' $DS_VERSIONS | sort -u | tr '\n' ' ')"
+elif [ "$distinct" = 1 ]; then
+  ok "all consumers on the same tag"
 fi
 
 printf '\n'
