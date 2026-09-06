@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# A superseded run tells you about a commit nobody is waiting on, while
+# holding a runner the current commit needs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   HUSKY: '0'
 
@@ -18,6 +24,7 @@ jobs:
   secrets-scan:
     name: Secrets Scan (Gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     # gitleaks-action calls GET /pulls/{n}/commits to scope its scan to the PR's
     # own commits. Dependabot-triggered runs get no implicit permissions beyond
     # what's declared here — every Dependabot PR failed this job with a 403
@@ -39,6 +46,7 @@ jobs:
   quality:
     name: Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -87,6 +95,7 @@ jobs:
   kit-drift:
     name: Observability kit in sync
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     # The kit is vendored into six other repositories. This job cannot see them
     # from here, so it verifies the one thing it can: that the canonical copy
     # still type-checks on its own. Cross-repo drift is caught by
@@ -109,6 +118,7 @@ jobs:
   sast:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Semgrep rather than CodeQL: CodeQL code scanning on a *private* repository
     # requires GitHub Code Security, a paid add-on. The CodeQL workflow beside
     # this one is gated on `!repository.private` for that reason and never runs.
