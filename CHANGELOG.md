@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.12.0](https://github.com/zigordev/platform-ops/compare/v1.11.3...v1.12.0) (2026-09-06)
+
+
+### Features
+
+* **ci:** add CodeQL analysis ([#91](https://github.com/zigordev/platform-ops/issues/91)) ([caa891e](https://github.com/zigordev/platform-ops/commit/caa891e03987160c948e4d35a9321fbbd7190227))
+
+
+### Bug Fixes
+
+* **ci:** merge with a PAT so push-triggered workflows still run ([#93](https://github.com/zigordev/platform-ops/issues/93)) ([911af56](https://github.com/zigordev/platform-ops/commit/911af561501d65e0d03722ba376bcc8aa1cebe25))
+
 ## [1.11.3](https://github.com/zigordev/platform-ops/compare/v1.11.2...v1.11.3) (2026-09-03)
 
 
