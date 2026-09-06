@@ -23,7 +23,7 @@
     "check:secret-expiry": "node ./scripts/check-secret-expiry.mjs"
   },
   "devDependencies": {
-    "@types/node": "^22.13.10",
+    "@types/node": "^26.4.0",
     "husky": "^9.1.7",
     "prettier": "^3.9.6",
     "prom-client": "^15.1.3",
