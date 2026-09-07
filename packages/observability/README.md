@@ -1,11 +1,12 @@
 # Observability kit
 
-The canonical copy of the observability code every Node service runs. Vendored
-into each repo by `scripts/sync-observability.sh`, and checked for drift by
-`scripts/verify-standards.sh`.
+The origin of the observability code every Node service runs.
 
-**Edit here, never in a consuming repo.** Every synced file carries a
-`DO NOT EDIT` header, and CI fails if a copy diverges.
+The sync script and drift check were removed on 2026-09-07. This is no longer
+propagated anywhere: gpool, kini and notifications hold independent copies under
+`apps/*/src/observability/`, and a change made here reaches none of them.
+
+The `DO NOT EDIT` headers in those copies are stale.
 
 ## Why vendored rather than published
 

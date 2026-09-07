@@ -130,15 +130,6 @@ else
   skip "no alerts.yml"
 fi
 
-# --- the vendored observability kit has not drifted -------------------------
-# Vendoring is only safe if divergence is loud. This is what makes it loud.
-printf '\n\033[1mobservability kit\033[0m\n'
-if CHECK=1 bash "$ROOT/platform-ops/scripts/sync-observability.sh" 2>/dev/null; then
-  :
-else
-  FAILED=$((FAILED+1))
-fi
-
 # --- the design-system is a dependency, and one version of it ---------------
 # This used to be a token-drift check over four vendored copies, because a
 # WCAG contrast fix had landed in cv's copy of colors.css and never reached
