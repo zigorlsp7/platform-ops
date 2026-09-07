@@ -9,7 +9,7 @@ while IFS= read -r file; do
   [ -n "$file" ] || continue
   bash -n "$file"
   count=$((count + 1))
-done < <(find "$REPO_ROOT/scripts" -maxdepth 1 -type f -name '*.sh' | sort)
+done < <(find "$REPO_ROOT/scripts" -maxdepth 2 -type f -name '*.sh' | sort)
 
 if [ "$count" -eq 0 ]; then
   echo "No shell scripts to lint."

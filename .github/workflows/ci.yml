@@ -88,6 +88,9 @@ jobs:
       - name: Observability kit tests
         run: npm test
 
+      - name: Deploy script helper tests
+        run: npm run test:shell
+
   sast:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest

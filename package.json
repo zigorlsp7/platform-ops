@@ -17,13 +17,17 @@
     "local:down": "bash ./scripts/local-stack-down-ops.sh",
     "local:reset": "bash ./scripts/local-stack-down-ops.sh --volumes",
     "test": "vitest run",
+    "test:shell": "bats test/shell",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check:licences": "node ./scripts/check-licences.mjs .",
     "check:secret-expiry": "node ./scripts/check-secret-expiry.mjs"
   },
   "devDependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@types/express": "^5.0.6",
     "@types/node": "^26.4.0",
+    "bats": "^1.13.0",
     "husky": "^9.1.7",
     "prettier": "^3.9.6",
     "prom-client": "^15.1.3",
