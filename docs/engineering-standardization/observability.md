@@ -99,10 +99,12 @@ faithfully collects all of it and can tell you almost nothing about it.
 
 ## 4. The shared kit
 
-Every Node service runs the same observability code, vendored from
-`platform-ops/packages/observability/` by `scripts/sync-observability.sh`.
-**Edit it there, never in a consuming repo** — each synced file carries a
-`DO NOT EDIT` header, and `verify-standards.sh` fails when a copy drifts.
+Every Node service runs a copy of the observability code that originated in
+`platform-ops/packages/observability/`.
+
+The sync script and drift check were removed on 2026-09-07, so the copies are
+now independent forks. The `DO NOT EDIT` headers they still carry are stale —
+nothing propagates a change from here, and nothing reports divergence.
 
 | file                         | for                                               |
 | ---------------------------- | ------------------------------------------------- |

@@ -109,9 +109,13 @@ Roughly one week.
 Roughly two weeks. This is where the platform starts paying for itself.
 
 1. **Extract the observability kit.** Done. `platform-ops/packages/observability/`
-   is canonical; `scripts/sync-observability.sh` vendors it into gpool, kini and
-   notifications; `verify-standards.sh` fails on drift. The `common/metrics` vs
-   `metrics` path split is gone — everything is `src/observability/`.
+   is canonical and the `common/metrics` vs `metrics` path split is gone —
+   everything is `src/observability/`.
+
+   The sync script and its drift check were removed on 2026-09-07. The copies in
+   gpool, kini and notifications are now independent: a fix here does not reach
+   them, and divergence is no longer reported. Propagating a change means editing
+   each copy by hand until the kit is distributed some other way.
 
    Three real defects surfaced while converging the two implementations:
    - **gpool imported `tracing` last.** Auto-instrumentation patches modules as
