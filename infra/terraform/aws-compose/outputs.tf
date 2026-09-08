@@ -45,6 +45,37 @@ output "github_actions_variables" {
   }
 }
 
+output "cv_api_ecr_repository_url" {
+  description = "ECR repository URI for the cv API image."
+  value       = aws_ecr_repository.cv_api.repository_url
+}
+
+output "cv_web_ecr_repository_url" {
+  description = "ECR repository URI for the cv Web image."
+  value       = aws_ecr_repository.cv_ui.repository_url
+}
+
+output "cv_github_deploy_role_arn" {
+  description = "IAM role ARN to configure in cv GitHub Actions for OIDC deploy."
+  value       = aws_iam_role.cv_github_deploy.arn
+}
+
+output "cv_ssm_app_parameter_prefix" {
+  description = "SSM prefix expected by cv deploy for app env values."
+  value       = var.cv_ssm_app_parameter_prefix
+}
+
+output "cv_github_actions_variables" {
+  description = "Copy these values into cv GitHub Environment variables (production)."
+  value = {
+    AWS_REGION                 = var.aws_region
+    AWS_DEPLOY_BUCKET          = aws_s3_bucket.deploy.id
+    AWS_DEPLOY_INSTANCE_ID     = aws_instance.app.id
+    AWS_ECR_WEB_REPOSITORY_URI = aws_ecr_repository.cv_ui.repository_url
+    AWS_SSM_APP_PREFIX         = var.cv_ssm_app_parameter_prefix
+  }
+}
+
 output "gpool_api_ecr_repository_url" {
   description = "ECR repository URI for the gpool API image."
   value       = aws_ecr_repository.gpool_api.repository_url
