@@ -172,6 +172,41 @@ variable "cv_ssm_app_parameter_prefix" {
   }
 }
 
+variable "kini_github_repository" {
+  description = "GitHub repository in ORG/REPO format allowed to assume the dedicated kini deploy role."
+  type        = string
+  default     = "zigordev/kini"
+}
+
+variable "kini_github_environment" {
+  description = "GitHub environment allowed to assume the dedicated kini deploy role."
+  type        = string
+  default     = "production"
+}
+
+variable "kini_ecr_api_repository_name" {
+  description = "Optional ECR repository name for kini API image."
+  type        = string
+  default     = "kini/prod/api"
+}
+
+variable "kini_ecr_web_repository_name" {
+  description = "Optional ECR repository name for kini Web image."
+  type        = string
+  default     = "kini/prod/web"
+}
+
+variable "kini_ssm_app_parameter_prefix" {
+  description = "SSM path prefix for kini app env values, e.g. /kini/prod/app."
+  type        = string
+  default     = "/kini/prod/app"
+
+  validation {
+    condition     = startswith(var.kini_ssm_app_parameter_prefix, "/")
+    error_message = "kini_ssm_app_parameter_prefix must start with a forward slash."
+  }
+}
+
 variable "gpool_github_repository" {
   description = "GitHub repository in ORG/REPO format allowed to assume the dedicated gpool deploy role."
   type        = string

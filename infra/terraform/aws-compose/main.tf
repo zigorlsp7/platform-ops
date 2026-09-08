@@ -41,6 +41,8 @@ locals {
   ecr_web_repository_name       = var.ecr_web_repository_name != "" ? var.ecr_web_repository_name : "${var.project}/${var.environment}/web"
   cv_ecr_api_repository_name    = var.cv_ecr_api_repository_name != "" ? var.cv_ecr_api_repository_name : "cv/prod/api"
   cv_ecr_web_repository_name    = var.cv_ecr_web_repository_name != "" ? var.cv_ecr_web_repository_name : "cv/prod/web"
+  kini_ecr_api_repository_name  = var.kini_ecr_api_repository_name != "" ? var.kini_ecr_api_repository_name : "kini/prod/api"
+  kini_ecr_web_repository_name  = var.kini_ecr_web_repository_name != "" ? var.kini_ecr_web_repository_name : "kini/prod/web"
   gpool_ecr_api_repository_name = var.gpool_ecr_api_repository_name != "" ? var.gpool_ecr_api_repository_name : "gpool/prod/api"
   gpool_ecr_web_repository_name = var.gpool_ecr_web_repository_name != "" ? var.gpool_ecr_web_repository_name : "gpool/prod/web"
   notifications_ecr_api_repository_name = (
@@ -49,6 +51,7 @@ locals {
   deploy_bucket_name                = var.deploy_bucket_name != "" ? var.deploy_bucket_name : "${local.name_prefix}-deploy-${random_id.suffix.hex}"
   ssm_ops_prefix_path               = trimprefix(var.ssm_ops_parameter_prefix, "/")
   cv_ssm_app_prefix_path            = trimprefix(var.cv_ssm_app_parameter_prefix, "/")
+  kini_ssm_app_prefix_path          = trimprefix(var.kini_ssm_app_parameter_prefix, "/")
   gpool_ssm_app_prefix_path         = trimprefix(var.gpool_ssm_app_parameter_prefix, "/")
   notifications_ssm_app_prefix_path = trimprefix(var.notifications_ssm_app_parameter_prefix, "/")
 }
@@ -178,6 +181,70 @@ resource "aws_ecr_lifecycle_policy" "api" {
 
 resource "aws_ecr_lifecycle_policy" "web" {
   repository = aws_ecr_repository.web.name
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 50 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 50
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_repository" "kini_api" {
+  name                 = local.kini_ecr_api_repository_name
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = false
+  tags                 = merge(local.tags, { Name = "${local.name_prefix}-kini-api-ecr" })
+
+  # Catches a vulnerable base image at push time rather than at audit time.
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_repository" "kini_web" {
+  name                 = local.kini_ecr_web_repository_name
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = false
+  tags                 = merge(local.tags, { Name = "${local.name_prefix}-kini-web-ecr" })
+
+  # Catches a vulnerable base image at push time rather than at audit time.
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_lifecycle_policy" "kini_api" {
+  repository = aws_ecr_repository.kini_api.name
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 50 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 50
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_lifecycle_policy" "kini_web" {
+  repository = aws_ecr_repository.kini_web.name
   policy = jsonencode({
     rules = [
       {
@@ -465,6 +532,7 @@ data "aws_iam_policy_document" "ec2_runtime" {
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.gpool_ssm_app_prefix_path}*",
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.notifications_ssm_app_prefix_path}*",
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.cv_ssm_app_prefix_path}*",
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${local.kini_ssm_app_prefix_path}*",
     ]
   }
 }
@@ -576,6 +644,37 @@ data "aws_iam_policy_document" "github_assume_role" {
 resource "aws_iam_role" "github_deploy" {
   name               = "${local.name_prefix}-github-deploy"
   assume_role_policy = data.aws_iam_policy_document.github_assume_role.json
+  tags               = local.tags
+}
+
+data "aws_iam_policy_document" "kini_github_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Federated"
+      identifiers = [local.github_oidc_provider_arn]
+    }
+
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${var.kini_github_repository}:environment:${var.kini_github_environment}"]
+    }
+  }
+}
+
+resource "aws_iam_role" "kini_github_deploy" {
+  name               = "kini-${var.environment}-github-deploy"
+  assume_role_policy = data.aws_iam_policy_document.kini_github_assume_role.json
   tags               = local.tags
 }
 
@@ -757,6 +856,93 @@ resource "aws_iam_policy" "github_deploy" {
 resource "aws_iam_role_policy_attachment" "github_deploy" {
   role       = aws_iam_role.github_deploy.name
   policy_arn = aws_iam_policy.github_deploy.arn
+}
+
+data "aws_iam_policy_document" "kini_github_deploy" {
+  statement {
+    sid    = "EcrAuth"
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "EcrPushPull"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:CompleteLayerUpload",
+      "ecr:DescribeImages",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart",
+    ]
+    resources = [
+      aws_ecr_repository.kini_api.arn,
+      aws_ecr_repository.kini_web.arn,
+    ]
+  }
+
+  statement {
+    sid    = "DeployBundleWrite"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket",
+    ]
+    resources = [
+      aws_s3_bucket.deploy.arn,
+      "${aws_s3_bucket.deploy.arn}/*",
+    ]
+  }
+
+  statement {
+    sid    = "SsmRunCommand"
+    effect = "Allow"
+    actions = [
+      "ssm:SendCommand",
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript",
+      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/${aws_instance.app.id}",
+    ]
+  }
+
+  statement {
+    sid    = "SsmCommandRead"
+    effect = "Allow"
+    actions = [
+      "ssm:GetCommandInvocation",
+      "ssm:ListCommandInvocations",
+      "ssm:ListCommands",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "DescribeInstances"
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeInstances",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "kini_github_deploy" {
+  name   = "kini-${var.environment}-github-deploy"
+  policy = data.aws_iam_policy_document.kini_github_deploy.json
+  tags   = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "kini_github_deploy" {
+  role       = aws_iam_role.kini_github_deploy.name
+  policy_arn = aws_iam_policy.kini_github_deploy.arn
 }
 
 data "aws_iam_policy_document" "cv_github_deploy" {

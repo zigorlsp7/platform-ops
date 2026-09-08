@@ -45,6 +45,38 @@ output "github_actions_variables" {
   }
 }
 
+output "kini_api_ecr_repository_url" {
+  description = "ECR repository URI for the kini API image."
+  value       = aws_ecr_repository.kini_api.repository_url
+}
+
+output "kini_web_ecr_repository_url" {
+  description = "ECR repository URI for the kini Web image."
+  value       = aws_ecr_repository.kini_web.repository_url
+}
+
+output "kini_github_deploy_role_arn" {
+  description = "IAM role ARN to configure in kini GitHub Actions for OIDC deploy."
+  value       = aws_iam_role.kini_github_deploy.arn
+}
+
+output "kini_ssm_app_parameter_prefix" {
+  description = "SSM prefix expected by kini deploy for app env values."
+  value       = var.kini_ssm_app_parameter_prefix
+}
+
+output "kini_github_actions_variables" {
+  description = "Copy these values into kini GitHub Environment variables (production)."
+  value = {
+    AWS_REGION                 = var.aws_region
+    AWS_DEPLOY_BUCKET          = aws_s3_bucket.deploy.id
+    AWS_DEPLOY_INSTANCE_ID     = aws_instance.app.id
+    AWS_ECR_API_REPOSITORY_URI = aws_ecr_repository.kini_api.repository_url
+    AWS_ECR_WEB_REPOSITORY_URI = aws_ecr_repository.kini_web.repository_url
+    AWS_SSM_APP_PREFIX         = var.kini_ssm_app_parameter_prefix
+  }
+}
+
 output "cv_api_ecr_repository_url" {
   description = "ECR repository URI for the cv API image."
   value       = aws_ecr_repository.cv_api.repository_url
