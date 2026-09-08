@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.1](https://github.com/zigordev/platform-ops/compare/v1.18.0...v1.18.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **flags:** register with the server, and state the fallback order correctly ([#126](https://github.com/zigordev/platform-ops/issues/126)) ([d79b6ce](https://github.com/zigordev/platform-ops/commit/d79b6cef4cc18e8a1190ed55f756b2647cc06aac))
+
 ## [1.18.0](https://github.com/zigordev/platform-ops/compare/v1.17.0...v1.18.0) (2026-09-08)
 
 
