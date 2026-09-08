@@ -363,6 +363,8 @@ required_ssm_secret_keys=(
   SMTP_AUTH_PASSWORD
   OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID
   OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY
+  UNLEASH_DB_PASSWORD
+  UNLEASH_ADMIN_PASSWORD
 )
 
 echo "[deploy] Loading required ops secrets from SSM prefix: $OPS_SSM_PREFIX"
@@ -382,6 +384,7 @@ ingress_domain_keys=(
   OPS_GRAFANA_DOMAIN
   OPS_TOLGEE_DOMAIN
   OPS_OPENBAO_DOMAIN
+  OPS_UNLEASH_DOMAIN
 )
 for key in "${ingress_domain_keys[@]}"; do
   require_env_value_in_file "$OPS_ENV_FILE" "$key"
