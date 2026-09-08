@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/zigordev/platform-ops/compare/v1.14.2...v1.15.0) (2026-09-08)
+
+
+### Features
+
+* **ingress:** route cv.zigordev.com to the cv web container ([#113](https://github.com/zigordev/platform-ops/issues/113)) ([692c655](https://github.com/zigordev/platform-ops/commit/692c65573498c14ade5b0d0245a65a214e5fd932))
+
 ## [1.14.2](https://github.com/zigordev/platform-ops/compare/v1.14.1...v1.14.2) (2026-09-08)
 
 
