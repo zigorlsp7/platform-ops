@@ -47,6 +47,26 @@ export interface RemoteFlagOptions {
   readonly appName: string;
   /** How often to poll, in milliseconds. */
   readonly refreshInterval?: number;
+  /**
+   * Stops the SDK registering and reporting which flags it read.
+   *
+   * Left on by default. Registration is what tells the server which services
+   * read which flags and when one was last evaluated, which is the only
+   * evidence that a flag is dead and can be removed. Turning it off saves one
+   * request a minute to a service on the same network and costs the answer to
+   * "is anything still reading this?".
+   */
+  readonly disableMetrics?: boolean;
+  /**
+   * Where the SDK caches the last flag set it received.
+   *
+   * That cache is read at startup when the server cannot be reached, so a
+   * process that has talked to the server before comes back with the values it
+   * last saw rather than the declared defaults. Only a process with no cache
+   * falls all the way back. Worth pointing at a known directory in tests, and
+   * at a writable one in a container whose temp directory is not.
+   */
+  readonly backupPath?: string;
 }
 
 type RemoteClient = {
@@ -109,10 +129,15 @@ export function isEnabled(key: string): boolean {
  * deploy.
  *
  * The declared set stays the source of truth for *which* flags exist and what
- * they mean; the server only supplies values. A flag the server has never
- * heard of, or every flag while the server is unreachable, falls back to the
- * value `registerFlags` already resolved. Losing the flag service therefore
- * degrades to the declared defaults rather than to an outage.
+ * they mean; the server only supplies values.
+ *
+ * Losing the flag service never becomes an outage, but what it degrades to
+ * depends on whether this process has talked to the server before. The SDK
+ * caches each flag set it receives to `backupPath`, reads that cache at
+ * startup, and only falls back to the value `registerFlags` resolved when
+ * there is no cache and no server. That order is deliberate and worth keeping:
+ * a flag turned *off* to stop something misbehaving should stay off across a
+ * restart, rather than reverting to a default that turns it back on.
  *
  * Resolves once the first flag set has been fetched, so a caller can await it
  * at startup and avoid serving one request from defaults and the next from the
@@ -134,7 +159,8 @@ export async function connectRemoteFlags(options: RemoteFlagOptions): Promise<bo
     appName: options.appName,
     customHeaders: { Authorization: options.token },
     refreshInterval: options.refreshInterval ?? 15_000,
-    disableMetrics: true,
+    disableMetrics: options.disableMetrics ?? false,
+    ...(options.backupPath ? { backupPath: options.backupPath } : {}),
   });
 
   const ready = await new Promise<boolean>((resolve) => {

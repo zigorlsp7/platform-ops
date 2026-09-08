@@ -10,16 +10,20 @@ import {
 
 const remoteValues = new Map<string, boolean>();
 let synchronized = true;
+let lastConfig: Record<string, unknown> = {};
 
 vi.mock('unleash-client', () => ({
-  initialize: () => ({
-    isEnabled: (key: string, _context: unknown, fallback: boolean) =>
-      remoteValues.has(key) ? remoteValues.get(key)! : fallback,
-    on: (event: string, listener: () => void) => {
-      if (event === (synchronized ? 'synchronized' : 'error')) listener();
-    },
-    destroy: () => undefined,
-  }),
+  initialize: (config: Record<string, unknown>) => (
+    (lastConfig = config),
+    {
+      isEnabled: (key: string, _context: unknown, fallback: boolean) =>
+        remoteValues.has(key) ? remoteValues.get(key)! : fallback,
+      on: (event: string, listener: () => void) => {
+        if (event === (synchronized ? 'synchronized' : 'error')) listener();
+      },
+      destroy: () => undefined,
+    }
+  ),
 }));
 
 describe('feature flags', () => {
@@ -118,6 +122,20 @@ describe('feature flags', () => {
 
       expect(await connect()).toBe(false);
       expect(isEnabled('degraded')).toBe(true);
+    });
+
+    it('reports the flag set it caches to disk, so a restart without a server keeps the last values', async () => {
+      registerFlags([{ key: 'cached', description: 'x', defaultValue: true }]);
+
+      await connectRemoteFlags({
+        url: 'http://unleash:4242',
+        token: 't',
+        appName: 'test',
+        backupPath: '/tmp/flag-cache',
+      });
+
+      expect(lastConfig.backupPath).toBe('/tmp/flag-cache');
+      expect(lastConfig.disableMetrics).toBe(false);
     });
 
     it('goes back to the declared values once disconnected', async () => {
