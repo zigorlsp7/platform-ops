@@ -123,7 +123,7 @@ services:
     ports:
       - '127.0.0.1:8200:8200'
     volumes:
-      - ../docker/openbao/prod.hcl:/openbao/config/prod.hcl:ro
+      - /opt/platform-ops/openbao/config:/openbao/config:ro
       - ops-prod-openbao-data:/openbao/data
     networks: [ops_shared]
 

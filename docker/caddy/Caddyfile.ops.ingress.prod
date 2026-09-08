@@ -35,5 +35,9 @@
 
 {$OPS_OPENBAO_DOMAIN} {
   encode zstd gzip
+
+  @metrics path /v1/sys/metrics*
+  respond @metrics 404
+
   reverse_proxy openbao:8200
 }

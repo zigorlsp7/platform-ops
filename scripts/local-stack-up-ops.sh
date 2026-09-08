@@ -171,8 +171,7 @@ case "$OPENBAO_HEALTH_CODE" in
     print_openbao_manual_init_steps
     ;;
   503)
-    echo "OpenBao is sealed (manual mode)." >&2
-    echo "Unseal it when needed. See docs/local-first-start.md (OpenBao UI steps)." >&2
+    bash "$SCRIPT_DIR/local-openbao-unseal.sh" || true
     ;;
   *)
     echo "Unexpected OpenBao health status code: $OPENBAO_HEALTH_CODE (continuing)." >&2

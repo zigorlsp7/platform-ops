@@ -216,6 +216,31 @@ if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev
   exit 1
 fi
 
+OPENBAO_CONFIG_DIR="/opt/platform-ops/openbao/config"
+OPENBAO_CONFIG_CHANGED="false"
+
+install_openbao_config() {
+  local source="docker/openbao/prod.hcl"
+  local target="$OPENBAO_CONFIG_DIR/prod.hcl"
+
+  if [ ! -f "$source" ]; then
+    echo "Missing OpenBao config in release bundle: $source" >&2
+    exit 1
+  fi
+
+  mkdir -p "$OPENBAO_CONFIG_DIR"
+
+  if [ -f "$target" ] && cmp -s "$source" "$target"; then
+    OPENBAO_CONFIG_CHANGED="false"
+    echo "[deploy] OpenBao config unchanged"
+    return
+  fi
+
+  install -m 0644 "$source" "$target"
+  OPENBAO_CONFIG_CHANGED="true"
+  echo "[deploy] Installed OpenBao config to $target"
+}
+
 prepare_openbao_volume_permissions() {
   local openbao_uid
   local openbao_gid
@@ -355,10 +380,18 @@ set +a
 
 docker network create "platform_ops_shared" >/dev/null 2>&1 || true
 
+install_openbao_config
+
 prepare_openbao_volume_permissions
 
 echo "[deploy] Starting ops stack"
 run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml up -d
+
+if [ "$OPENBAO_CONFIG_CHANGED" = "true" ]; then
+  echo "[deploy] OpenBao config changed; restarting OpenBao to load it"
+  echo "[deploy] OpenBao will come back sealed and needs a manual unseal"
+  run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml restart openbao
+fi
 
 run_compose --env-file "$OPS_ENV_FILE" -f docker/compose.ops.prod.yml ps
 

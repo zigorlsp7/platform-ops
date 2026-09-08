@@ -24,6 +24,7 @@ says what it depends on.
 | `ServiceUnhealthy`                         | [service-unhealthy.md](service-unhealthy.md) |
 | `ServiceDegraded`                          | [service-degraded.md](service-degraded.md)   |
 | `ComponentDown`                            | [component-down.md](component-down.md)       |
+| `OpenBaoSealed`                            | [openbao-sealed.md](openbao-sealed.md)       |
 | `HostDisk*`, `HostFilesystemWillFillIn24h` | [host-disk.md](host-disk.md)                 |
 | `HostMemoryPressure`                       | [host-memory.md](host-memory.md)             |
 | `KafkaConsumerLagGrowing`                  | [kafka-lag.md](kafka-lag.md)                 |
