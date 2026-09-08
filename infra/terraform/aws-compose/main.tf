@@ -503,6 +503,10 @@ data "aws_iam_policy_document" "ec2_runtime" {
       aws_ecr_repository.gpool_api.arn,
       aws_ecr_repository.gpool_web.arn,
       aws_ecr_repository.notifications_api.arn,
+      aws_ecr_repository.kini_api.arn,
+      aws_ecr_repository.kini_web.arn,
+      aws_ecr_repository.cv_api.arn,
+      aws_ecr_repository.cv_ui.arn,
     ]
   }
 
