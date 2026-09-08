@@ -34,11 +34,12 @@ kini_ecr_web_repository_name  = "kini/prod/web"
 kini_ssm_app_parameter_prefix = "/kini/prod/app"
 
 # Dedicated cv deploy role + repositories.
-cv_github_repository        = "your-org/cv"
-cv_github_environment       = "production"
-cv_ecr_api_repository_name  = "cv/prod/api"
-cv_ecr_web_repository_name  = "cv/prod/web"
-cv_ssm_app_parameter_prefix = "/cv/prod/app"
+cv_github_repository         = "your-org/cv"
+cv_github_repository_id_path = "your-org@000000000/cv@0000000000"
+cv_github_environment        = "production"
+cv_ecr_api_repository_name   = "cv/prod/api"
+cv_ecr_web_repository_name   = "cv/prod/web"
+cv_ssm_app_parameter_prefix  = "/cv/prod/app"
 
 # Dedicated gpool deploy role + repositories.
 gpool_github_repository        = "your-org/gpool"

@@ -143,6 +143,12 @@ variable "cv_github_repository" {
   default     = "zigordev/cv"
 }
 
+variable "cv_github_repository_id_path" {
+  description = "GitHub's identifier-qualified repository path (OWNER@ownerid/REPO@repoid) as it appears in the OIDC subject claim for newer repositories. Empty disables the extra subject."
+  type        = string
+  default     = ""
+}
+
 variable "cv_github_environment" {
   description = "GitHub environment allowed to assume the dedicated cv deploy role."
   type        = string
