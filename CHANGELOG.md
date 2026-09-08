@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/zigordev/platform-ops/compare/v1.18.2...v1.19.0) (2026-09-08)
+
+
+### Features
+
+* **ingress:** serve Unleash at flags.zigordev.com ([#130](https://github.com/zigordev/platform-ops/issues/130)) ([c766d77](https://github.com/zigordev/platform-ops/commit/c766d77f8dbf908cd09a5785bbc958c6b81ac1a6))
+
 ## [1.18.2](https://github.com/zigordev/platform-ops/compare/v1.18.1...v1.18.2) (2026-09-08)
 
 
