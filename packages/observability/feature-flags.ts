@@ -34,9 +34,28 @@ export interface FlagDefinition {
 
 export interface ResolvedFlag extends FlagDefinition {
   readonly enabled: boolean;
-  /** Whether the value came from the environment or the default. */
-  readonly source: 'default' | 'environment';
+  /** Where the value came from. */
+  readonly source: 'default' | 'environment' | 'remote';
 }
+
+export interface RemoteFlagOptions {
+  /** Base URL of the Unleash server, without a trailing path. */
+  readonly url: string;
+  /** A client token, scoped to one environment. */
+  readonly token: string;
+  /** Identifies this service in the Unleash UI. */
+  readonly appName: string;
+  /** How often to poll, in milliseconds. */
+  readonly refreshInterval?: number;
+}
+
+type RemoteClient = {
+  isEnabled(key: string, context?: unknown, fallback?: boolean): boolean;
+  on(event: string, listener: (payload?: unknown) => void): unknown;
+  destroy(): void;
+};
+
+let remote: RemoteClient | undefined;
 
 const resolved = new Map<string, ResolvedFlag>();
 
@@ -79,10 +98,70 @@ export function isEnabled(key: string): boolean {
       `Unknown feature flag "${key}". Every flag must be declared in registerFlags().`
     );
   }
+  if (remote) {
+    return remote.isEnabled(key, undefined, flag.enabled);
+  }
   return flag.enabled;
+}
+
+/**
+ * Points the reader at an Unleash server, so a flag can be changed without a
+ * deploy.
+ *
+ * The declared set stays the source of truth for *which* flags exist and what
+ * they mean; the server only supplies values. A flag the server has never
+ * heard of, or every flag while the server is unreachable, falls back to the
+ * value `registerFlags` already resolved. Losing the flag service therefore
+ * degrades to the declared defaults rather than to an outage.
+ *
+ * Resolves once the first flag set has been fetched, so a caller can await it
+ * at startup and avoid serving one request from defaults and the next from the
+ * server. It resolves rather than rejects on failure, for the same reason.
+ *
+ * The SDK is imported through a non-literal specifier so the compiler does not
+ * try to resolve it: this file is vendored into every repository, and most of
+ * them declare flags without talking to a flag server. Only the ones that call
+ * this function need the dependency.
+ */
+export async function connectRemoteFlags(options: RemoteFlagOptions): Promise<boolean> {
+  const moduleName = 'unleash-client';
+  const { initialize } = (await import(moduleName)) as {
+    initialize: (config: Record<string, unknown>) => RemoteClient;
+  };
+
+  const client = initialize({
+    url: `${options.url.replace(/\/+$/, '')}/api`,
+    appName: options.appName,
+    customHeaders: { Authorization: options.token },
+    refreshInterval: options.refreshInterval ?? 15_000,
+    disableMetrics: true,
+  });
+
+  const ready = await new Promise<boolean>((resolve) => {
+    const settle = (value: boolean) => {
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = setTimeout(() => settle(false), 5_000);
+    client.on('synchronized', () => settle(true));
+    client.on('error', () => settle(false));
+  });
+
+  remote = client;
+  return ready;
+}
+
+/** Drops the remote source, so reads fall back to the declared values. */
+export function disconnectRemoteFlags(): void {
+  remote?.destroy();
+  remote = undefined;
 }
 
 /** The whole set, for the `/flags` endpoint and for startup logging. */
 export function allFlags(): ResolvedFlag[] {
-  return [...resolved.values()];
+  return [...resolved.values()].map((flag) =>
+    remote
+      ? { ...flag, enabled: remote.isEnabled(flag.key, undefined, flag.enabled), source: 'remote' }
+      : flag
+  );
 }

@@ -1,6 +1,26 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { allFlags, isEnabled, registerFlags } from './feature-flags';
+import {
+  allFlags,
+  connectRemoteFlags,
+  disconnectRemoteFlags,
+  isEnabled,
+  registerFlags,
+} from './feature-flags';
+
+const remoteValues = new Map<string, boolean>();
+let synchronized = true;
+
+vi.mock('unleash-client', () => ({
+  initialize: () => ({
+    isEnabled: (key: string, _context: unknown, fallback: boolean) =>
+      remoteValues.has(key) ? remoteValues.get(key)! : fallback,
+    on: (event: string, listener: () => void) => {
+      if (event === (synchronized ? 'synchronized' : 'error')) listener();
+    },
+    destroy: () => undefined,
+  }),
+}));
 
 describe('feature flags', () => {
   beforeEach(() => {
@@ -43,5 +63,72 @@ describe('feature flags', () => {
   it('throws on an unregistered flag rather than returning false', () => {
     registerFlags([{ key: 'known', description: 'x', defaultValue: true }]);
     expect(() => isEnabled('typo')).toThrow(/Unknown feature flag/);
+  });
+
+  describe('with a remote source', () => {
+    beforeEach(() => {
+      remoteValues.clear();
+      synchronized = true;
+    });
+
+    afterEach(() => {
+      disconnectRemoteFlags();
+    });
+
+    const connect = () =>
+      connectRemoteFlags({ url: 'http://unleash:4242', token: 't', appName: 'test' });
+
+    it('lets the server override the declared value', async () => {
+      registerFlags([{ key: 'cv-pdf-download', description: 'x', defaultValue: false }]);
+      remoteValues.set('cv-pdf-download', true);
+
+      expect(await connect()).toBe(true);
+      expect(isEnabled('cv-pdf-download')).toBe(true);
+    });
+
+    it('falls back to the declared value for a flag the server has never heard of', async () => {
+      registerFlags([{ key: 'only-local', description: 'x', defaultValue: true }]);
+
+      await connect();
+
+      expect(isEnabled('only-local')).toBe(true);
+    });
+
+    it('reports that a value came from the server', async () => {
+      registerFlags([{ key: 'sourced', description: 'x', defaultValue: false }]);
+      remoteValues.set('sourced', true);
+
+      await connect();
+
+      expect(allFlags().find((f) => f.key === 'sourced')?.source).toBe('remote');
+    });
+
+    it('still throws on an unregistered flag, so a typo cannot be answered by the server', async () => {
+      registerFlags([{ key: 'declared', description: 'x', defaultValue: true }]);
+      remoteValues.set('undeclared', true);
+
+      await connect();
+
+      expect(() => isEnabled('undeclared')).toThrow(/Unknown feature flag/);
+    });
+
+    it('resolves false when the server never synchronises, and keeps serving defaults', async () => {
+      synchronized = false;
+      registerFlags([{ key: 'degraded', description: 'x', defaultValue: true }]);
+
+      expect(await connect()).toBe(false);
+      expect(isEnabled('degraded')).toBe(true);
+    });
+
+    it('goes back to the declared values once disconnected', async () => {
+      registerFlags([{ key: 'reverts', description: 'x', defaultValue: false }]);
+      remoteValues.set('reverts', true);
+      await connect();
+      expect(isEnabled('reverts')).toBe(true);
+
+      disconnectRemoteFlags();
+
+      expect(isEnabled('reverts')).toBe(false);
+    });
   });
 });
