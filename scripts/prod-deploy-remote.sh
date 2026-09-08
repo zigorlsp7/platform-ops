@@ -384,7 +384,6 @@ ingress_domain_keys=(
   OPS_GRAFANA_DOMAIN
   OPS_TOLGEE_DOMAIN
   OPS_OPENBAO_DOMAIN
-  OPS_UNLEASH_DOMAIN
 )
 for key in "${ingress_domain_keys[@]}"; do
   require_env_value_in_file "$OPS_ENV_FILE" "$key"
