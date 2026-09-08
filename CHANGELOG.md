@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.2](https://github.com/zigordev/platform-ops/compare/v1.12.1...v1.12.2) (2026-09-08)
+
+
+### Bug Fixes
+
+* **terraform:** re-declare cv's deploy resources before an apply destroys them ([#103](https://github.com/zigordev/platform-ops/issues/103)) ([9c536c7](https://github.com/zigordev/platform-ops/commit/9c536c74e71911c3e4041ba3b4b9802f2e27c7cb))
+
 ## [1.12.1](https://github.com/zigordev/platform-ops/compare/v1.12.0...v1.12.1) (2026-09-08)
 
 
