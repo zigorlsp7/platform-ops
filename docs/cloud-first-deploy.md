@@ -256,9 +256,20 @@ Deploy. The deploy renders the OpenBao config, sees it changed, and restarts
 OpenBao. It comes back **still sealed** — an already-initialized Shamir cluster
 does not adopt a new seal on its own. Migrate it, once:
 
+OpenBao runs on the EC2 host. Open a session — an SSM session lands as
+`ssm-user`, which is not in the `docker` group, so every docker command there
+needs `sudo`:
+
 ```bash
-docker compose -f docker/compose.ops.prod.yml exec -T \
-  -e BAO_ADDR=http://127.0.0.1:8200 openbao bao operator unseal -migrate
+AWS_PROFILE=platform-ops aws ssm start-session --region eu-west-1 \
+  --target "$(terraform -chdir=infra/terraform/aws-compose output -raw instance_id)"
+```
+
+Then, on the host:
+
+```bash
+sudo docker exec -it -e BAO_ADDR=http://127.0.0.1:8200 \
+  platform-ops-prod-openbao-1 bao operator unseal -migrate
 ```
 
 Supply `Unseal Key 1` when prompted. Confirm with `bao status`: `Seal Type`
@@ -268,9 +279,12 @@ From then on OpenBao unseals itself on every start. Verify by restarting it and
 watching it come back unsealed:
 
 ```bash
-docker compose -f docker/compose.ops.prod.yml restart openbao
+sudo docker restart platform-ops-prod-openbao-1
 curl -s http://127.0.0.1:8200/v1/sys/seal-status
 ```
+
+`sealed: false` with `"type":"awskms"` and no `migration` flag means auto-unseal
+is working.
 
 If OpenBao exits instead of starting, it could not reach the KMS key — see
 [runbooks/openbao-sealed.md](runbooks/openbao-sealed.md), which covers the exact
