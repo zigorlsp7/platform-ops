@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.1](https://github.com/zigordev/platform-ops/compare/v1.12.0...v1.12.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **deploy:** grant the deploy roles ecr:DescribeImages ([#101](https://github.com/zigordev/platform-ops/issues/101)) ([4078f30](https://github.com/zigordev/platform-ops/commit/4078f304b1610632d68fd04c3b86a1bb8fd411c0))
+
 ## [1.12.0](https://github.com/zigordev/platform-ops/compare/v1.11.3...v1.12.0) (2026-09-06)
 
 
