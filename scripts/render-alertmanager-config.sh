@@ -13,6 +13,8 @@ set -euo pipefail
 
 TEMPLATE="${1:-docker/alertmanager/config.prod.yml.tpl}"
 OUTPUT="${2:-docker/alertmanager/config.prod.yml}"
+ALERTMANAGER_UID="${ALERTMANAGER_UID:-65534}"
+ALERTMANAGER_GID="${ALERTMANAGER_GID:-65534}"
 
 if [ ! -f "$TEMPLATE" ]; then
   echo "[alertmanager] Template not found: $TEMPLATE" >&2
@@ -57,4 +59,8 @@ fi
 # The rendered file holds an SMTP password.
 mv "$OUTPUT.tmp" "$OUTPUT"
 chmod 600 "$OUTPUT"
+if ! chown "$ALERTMANAGER_UID:$ALERTMANAGER_GID" "$OUTPUT"; then
+  echo "[alertmanager] Cannot chown $OUTPUT to $ALERTMANAGER_UID:$ALERTMANAGER_GID; Alertmanager runs as that user and could not read the config" >&2
+  exit 1
+fi
 echo "[alertmanager] Rendered $OUTPUT"
