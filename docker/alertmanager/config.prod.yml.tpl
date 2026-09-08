@@ -28,9 +28,10 @@ global:
 
 route:
   receiver: email-page
-  # Grouped by alert name and service, so a broker outage that trips four
-  # services arrives as one mail per alert rather than four separate ones.
-  group_by: ['alertname', 'job']
+  # Grouped by environment, alert name and service, so a broker outage that
+  # trips four services arrives as one mail per alert rather than four separate
+  # ones, and prod never shares a mail with anything else.
+  group_by: ['environment', 'alertname', 'job']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
@@ -58,12 +59,13 @@ receivers:
       - to: '${ALERT_EMAIL_TO}'
         send_resolved: true
         headers:
-          subject: '[FIRING] {{ .CommonLabels.alertname }} — {{ .CommonLabels.job }}'
+          subject: '[{{ .CommonLabels.environment }}] [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — {{ .CommonLabels.job }}'
         html: |
           {{ range .Alerts }}
           <h3>{{ .Annotations.summary }}</h3>
           <p>{{ .Annotations.description }}</p>
-          <p><b>Service:</b> {{ .Labels.job }}<br>
+          <p><b>Environment:</b> {{ .Labels.environment }}<br>
+             <b>Service:</b> {{ .Labels.job }}<br>
              <b>Severity:</b> {{ .Labels.severity }}<br>
              <b>Since:</b> {{ .StartsAt }}</p>
           <p><a href="{{ .Annotations.runbook_url }}">Runbook</a></p>
@@ -75,12 +77,13 @@ receivers:
       - to: '${ALERT_EMAIL_TO}'
         send_resolved: true
         headers:
-          subject: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+          subject: '[{{ .CommonLabels.environment }}] [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
         html: |
           {{ range .Alerts }}
           <h3>{{ .Annotations.summary }}</h3>
           <p>{{ .Annotations.description }}</p>
-          <p><b>Service:</b> {{ .Labels.job }}<br>
+          <p><b>Environment:</b> {{ .Labels.environment }}<br>
+             <b>Service:</b> {{ .Labels.job }}<br>
              <b>Since:</b> {{ .StartsAt }}</p>
           <p><a href="{{ .Annotations.runbook_url }}">Runbook</a></p>
           <hr>

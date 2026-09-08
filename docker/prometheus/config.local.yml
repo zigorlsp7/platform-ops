@@ -1,5 +1,7 @@
 global:
   scrape_interval: 5s
+  external_labels:
+    environment: local
 
 alerting:
   alertmanagers:
