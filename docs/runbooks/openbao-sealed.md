@@ -53,6 +53,9 @@ Directly, on the host:
 curl -s http://127.0.0.1:8200/v1/sys/seal-status
 ```
 
+Run that on the host too — port 8200 is bound to `127.0.0.1` and is not reachable
+from anywhere else.
+
 `sealed: true` confirms it, and `recovery_seal: true` confirms the KMS seal is
 in use. `sys/health` is the same signal as an HTTP status: `200` unsealed, `503`
 sealed, `501` never initialized.
@@ -69,10 +72,22 @@ Work out which of these it is. They need different fixes.
 
 2. **Somebody sealed it.** `bao operator seal`, or the UI. Unseal it:
 
+   Production OpenBao runs on the EC2 host, not on your machine, and an SSM
+   session lands as `ssm-user`, which is not in the `docker` group. So: open a
+   session, then `sudo`.
+
    ```bash
-   docker compose -f docker/compose.ops.prod.yml exec -T \
-     -e BAO_ADDR=http://127.0.0.1:8200 openbao bao operator unseal
+   AWS_PROFILE=platform-ops aws ssm start-session --region eu-west-1 \
+     --target "$(terraform -chdir=infra/terraform/aws-compose output -raw instance_id)"
    ```
+
+   ```bash
+   sudo docker exec -it -e BAO_ADDR=http://127.0.0.1:8200 \
+     platform-ops-prod-openbao-1 bao operator unseal
+   ```
+
+   `docker exec` on the container name rather than `docker compose exec`, because
+   the prod compose file lives under whichever release directory is current.
 
    With the KMS seal in place this takes a **recovery key**, not the old unseal
    key. They are the same strings you got from `operator init`, but they play a
