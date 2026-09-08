@@ -219,6 +219,67 @@ Then:
 This is the production secret store used later by `gpool`, and `notifications`.
 The shared Redpanda broker deployed by `platform-ops` is also what those repos use for Kafka-based notifications.
 
+Keep `Unseal Key 1`. After the auto-unseal migration below it stops being an
+unseal key and becomes a **recovery key**, which is still what `generate-root`,
+`rekey` and a future seal migration require.
+
+### 8.1 Auto-unseal With KMS
+
+Without this, OpenBao starts sealed on every process start — a host reboot, an
+OOM kill or a config change leaves production serving no secrets until somebody
+unseals it by hand.
+
+Prerequisites from `terraform apply`, which creates the KMS key and a dedicated
+IAM user scoped to `kms:Encrypt`, `kms:Decrypt` and `kms:DescribeKey` on that
+key alone:
+
+```bash
+terraform -chdir=infra/terraform/aws-compose output openbao_unseal_kms_key_id
+terraform -chdir=infra/terraform/aws-compose output openbao_unseal_iam_user_name
+```
+
+The IAM user has no access key, deliberately — Terraform would otherwise hold
+the secret in state. Create one and store both halves in SSM under the ops
+prefix, alongside the other ops secrets:
+
+```bash
+aws iam create-access-key --user-name <openbao_unseal_iam_user_name>
+aws ssm put-parameter --type SecureString --name /platform-ops/prod/ops/OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID --value <AccessKeyId>
+aws ssm put-parameter --type SecureString --name /platform-ops/prod/ops/OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY --value <SecretAccessKey>
+```
+
+Set `OPS_OPENBAO_KMS_KEY_ID` in `docker/.env.ops.prod` to the key id. It is not
+a secret; the deploy refuses to render the OpenBao config while it still reads
+`SET_FROM_TERRAFORM`.
+
+Deploy. The deploy renders the OpenBao config, sees it changed, and restarts
+OpenBao. It comes back **still sealed** — an already-initialized Shamir cluster
+does not adopt a new seal on its own. Migrate it, once:
+
+```bash
+docker compose -f docker/compose.ops.prod.yml exec -T \
+  -e BAO_ADDR=http://127.0.0.1:8200 openbao bao operator unseal -migrate
+```
+
+Supply `Unseal Key 1` when prompted. Confirm with `bao status`: `Seal Type`
+becomes `awskms` and `Recovery Seal Type` becomes `shamir`.
+
+From then on OpenBao unseals itself on every start. Verify by restarting it and
+watching it come back unsealed:
+
+```bash
+docker compose -f docker/compose.ops.prod.yml restart openbao
+curl -s http://127.0.0.1:8200/v1/sys/seal-status
+```
+
+If OpenBao exits instead of starting, it could not reach the KMS key — see
+[runbooks/openbao-sealed.md](runbooks/openbao-sealed.md), which covers the exact
+error strings.
+
+**Never delete the KMS key.** Its ciphertext is the only thing that can decrypt
+OpenBao's storage, and deleting it destroys every production secret
+irrecoverably. The key has a 30-day deletion window and key rotation enabled.
+
 ## 9. Translation Promotion Model
 
 For app repos that use Tolgee, production Tolgee should not be a manual editing source.

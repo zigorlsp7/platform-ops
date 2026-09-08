@@ -115,11 +115,11 @@ services:
     restart: unless-stopped
     cap_add:
       - IPC_LOCK
-    command: ['server', '-config=/etc/openbao/prod.hcl']
+    command: ['server', '-config=/etc/openbao/local.hcl']
     ports:
       - '8200:8200'
     volumes:
-      - ../docker/openbao/prod.hcl:/etc/openbao/prod.hcl:ro
+      - ../docker/openbao/local.hcl:/etc/openbao/local.hcl:ro
       - ops-local-openbao-data:/openbao/data
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:8200/v1/sys/health >/dev/null']

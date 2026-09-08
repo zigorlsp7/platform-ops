@@ -552,6 +552,42 @@ resource "aws_iam_role_policy_attachment" "ec2_runtime" {
   policy_arn = aws_iam_policy.ec2_runtime.arn
 }
 
+resource "aws_kms_key" "openbao_unseal" {
+  description             = "${local.name_prefix} OpenBao auto-unseal"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+  tags                    = local.tags
+}
+
+resource "aws_kms_alias" "openbao_unseal" {
+  name          = "alias/${local.name_prefix}-openbao-unseal"
+  target_key_id = aws_kms_key.openbao_unseal.key_id
+}
+
+resource "aws_iam_user" "openbao_unseal" {
+  name = "${local.name_prefix}-openbao-unseal"
+  tags = local.tags
+}
+
+data "aws_iam_policy_document" "openbao_unseal" {
+  statement {
+    sid    = "OpenBaoAutoUnseal"
+    effect = "Allow"
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:DescribeKey",
+    ]
+    resources = [aws_kms_key.openbao_unseal.arn]
+  }
+}
+
+resource "aws_iam_user_policy" "openbao_unseal" {
+  name   = "${local.name_prefix}-openbao-unseal"
+  user   = aws_iam_user.openbao_unseal.name
+  policy = data.aws_iam_policy_document.openbao_unseal.json
+}
+
 resource "aws_iam_instance_profile" "ec2" {
   name = "${local.name_prefix}-ec2-instance-profile"
   role = aws_iam_role.ec2.name

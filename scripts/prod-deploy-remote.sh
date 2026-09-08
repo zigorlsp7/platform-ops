@@ -219,26 +219,48 @@ fi
 OPENBAO_CONFIG_DIR="/opt/platform-ops/openbao/config"
 OPENBAO_CONFIG_CHANGED="false"
 
-install_openbao_config() {
-  local source="docker/openbao/prod.hcl"
+render_openbao_config() {
+  local template="docker/openbao/prod.hcl.tpl"
   local target="$OPENBAO_CONFIG_DIR/prod.hcl"
+  local rendered
 
-  if [ ! -f "$source" ]; then
-    echo "Missing OpenBao config in release bundle: $source" >&2
+  if [ ! -f "$template" ]; then
+    echo "Missing OpenBao config template in release bundle: $template" >&2
     exit 1
   fi
 
-  mkdir -p "$OPENBAO_CONFIG_DIR"
+  case "${OPS_OPENBAO_KMS_KEY_ID:-}" in
+    ""|CHANGE_ME*|SET_FROM_*)
+      echo "OPS_OPENBAO_KMS_KEY_ID is not set to a real KMS key id in docker/.env.ops.prod." >&2
+      echo "Take it from the terraform output 'openbao_unseal_kms_key_id'." >&2
+      exit 1
+      ;;
+  esac
 
-  if [ -f "$target" ] && cmp -s "$source" "$target"; then
+  mkdir -p "$OPENBAO_CONFIG_DIR"
+  rendered="$(mktemp)"
+
+  AWS_REGION="$AWS_REGION" OPS_OPENBAO_KMS_KEY_ID="$OPS_OPENBAO_KMS_KEY_ID" \
+    envsubst '$AWS_REGION $OPS_OPENBAO_KMS_KEY_ID' <"$template" >"$rendered"
+
+  if grep -q '\${' "$rendered"; then
+    echo "[openbao] Rendered config still contains unexpanded placeholders:" >&2
+    grep -n '\${' "$rendered" >&2
+    rm -f "$rendered"
+    exit 1
+  fi
+
+  if [ -f "$target" ] && cmp -s "$rendered" "$target"; then
+    rm -f "$rendered"
     OPENBAO_CONFIG_CHANGED="false"
     echo "[deploy] OpenBao config unchanged"
     return
   fi
 
-  install -m 0644 "$source" "$target"
+  install -m 0644 "$rendered" "$target"
+  rm -f "$rendered"
   OPENBAO_CONFIG_CHANGED="true"
-  echo "[deploy] Installed OpenBao config to $target"
+  echo "[deploy] Rendered OpenBao config to $target"
 }
 
 prepare_openbao_volume_permissions() {
@@ -326,6 +348,7 @@ required_non_secret_keys=(
   SMTP_SMARTHOST
   SMTP_FROM
   ALERT_EMAIL_TO
+  OPS_OPENBAO_KMS_KEY_ID
 )
 
 for key in "${required_non_secret_keys[@]}"; do
@@ -338,6 +361,8 @@ required_ssm_secret_keys=(
   TOLGEE_JWT_SECRET
   SMTP_AUTH_USERNAME
   SMTP_AUTH_PASSWORD
+  OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID
+  OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY
 )
 
 echo "[deploy] Loading required ops secrets from SSM prefix: $OPS_SSM_PREFIX"
@@ -345,6 +370,8 @@ for key in "${required_ssm_secret_keys[@]}"; do
   secret_value="$(fetch_ssm_secret_value "$key")"
   upsert_env_value "$OPS_ENV_FILE" "$key" "$secret_value"
 done
+
+upsert_env_value "$OPS_ENV_FILE" "AWS_REGION" "$AWS_REGION"
 
 ingress_domain_keys=(
   GPOOL_WEB_DOMAIN
@@ -380,7 +407,7 @@ set +a
 
 docker network create "platform_ops_shared" >/dev/null 2>&1 || true
 
-install_openbao_config
+render_openbao_config
 
 prepare_openbao_volume_permissions
 

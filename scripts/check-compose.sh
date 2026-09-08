@@ -37,6 +37,9 @@ compose_vars=(
   TOLGEE_INITIAL_USERNAME
   TOLGEE_INITIAL_PASSWORD
   TOLGEE_JWT_SECRET
+  AWS_REGION
+  OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID
+  OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY
 )
 for key in "${compose_vars[@]}"; do
   unset "$key" || true
@@ -88,6 +91,9 @@ set_key_if_missing_or_empty "$prod_env_tmp" "GRAFANA_ADMIN_PASSWORD" "__placehol
 set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_INITIAL_USERNAME" "platform_ops_admin"
 set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_INITIAL_PASSWORD" "__placeholder_for_compose_validation__"
 set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_JWT_SECRET" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$prod_env_tmp" "AWS_REGION" "eu-west-1"
+set_key_if_missing_or_empty "$prod_env_tmp" "OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$prod_env_tmp" "OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY" "__placeholder_for_compose_validation__"
 
 docker compose --env-file "$local_env_tmp" -f "$REPO_ROOT/docker/compose.ops.local.yml" config > "$local_tmp"
 docker compose --env-file "$prod_env_tmp" -f "$REPO_ROOT/docker/compose.ops.prod.yml" config > "$prod_tmp"
