@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/zigordev/platform-ops/compare/v1.15.2...v1.16.0) (2026-09-08)
+
+
+### Features
+
+* **openbao:** auto-unseal production, stop deploys resealing it, and alert when sealed ([#119](https://github.com/zigordev/platform-ops/issues/119)) ([052e8b3](https://github.com/zigordev/platform-ops/commit/052e8b3f067c021769b7397611fdb91323c4b65e))
+
 ## [1.15.2](https://github.com/zigordev/platform-ops/compare/v1.15.1...v1.15.2) (2026-09-08)
 
 
