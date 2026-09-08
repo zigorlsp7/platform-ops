@@ -219,8 +219,13 @@ Important:
 
 If OpenBao restarts in the sealed state:
 
-- open `http://localhost:8200/ui`
-- unseal it again with `Unseal Key 1`
+- `npm run local:up` unseals it automatically when `docker/.openbao-local-unseal-key`
+  holds `Unseal Key 1`; that file is gitignored
+- otherwise open `http://localhost:8200/ui` and unseal it again with `Unseal Key 1`
+
+Local uses the Shamir seal and so starts sealed on every process start. Production
+auto-unseals through KMS instead, which is why `docker/openbao/local.hcl` and
+`docker/openbao/prod.hcl.tpl` are separate files.
 
 ## 10. Troubleshooting
 
@@ -237,7 +242,7 @@ OpenBao health returns `501`:
 OpenBao health returns `503`:
 
 - OpenBao is sealed
-- unseal it again with `Unseal Key 1`
+- run `bash scripts/local-openbao-unseal.sh`, or unseal it in the UI with `Unseal Key 1`
 
 Grafana or Tolgee login fails after you changed bootstrap credentials:
 

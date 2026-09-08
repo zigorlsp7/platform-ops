@@ -20,6 +20,9 @@ docker/.env.ops.local
 # Rendered at deploy from config.prod.yml.tpl; contains the SMTP password
 docker/alertmanager/config.prod.yml
 
+# Local OpenBao unseal key, read by scripts/local-openbao-unseal.sh
+docker/.openbao-local-unseal-key
+
 # OS/editor
 .DS_Store
 .vscode/

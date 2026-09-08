@@ -224,6 +224,22 @@ groups:
             unreachable for five minutes.
           runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/component-down.md'
 
+      - alert: OpenBaoSealed
+        expr: max by (job) (vault_core_unsealed) == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: 'OpenBao is sealed'
+          description: >-
+            OpenBao is running but sealed, so it is serving no secrets. Prod
+            auto-unseals through KMS, so this means the seal was migrated away,
+            somebody sealed it by hand, or auto-unseal partially failed. Nothing
+            breaks until something restarts: applications read their secrets at
+            boot only, so running containers are unaffected and the next deploy
+            or restart fails.
+          runbook_url: 'https://github.com/zigorlsp7/platform-ops/blob/main/docs/runbooks/openbao-sealed.md'
+
   # ===========================================================================
   # Host and infrastructure.
   #

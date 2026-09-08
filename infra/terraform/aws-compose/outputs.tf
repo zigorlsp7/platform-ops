@@ -165,3 +165,13 @@ output "notifications_github_actions_variables" {
     AWS_SSM_APP_PREFIX         = var.notifications_ssm_app_parameter_prefix
   }
 }
+
+output "openbao_unseal_kms_key_id" {
+  description = "KMS key id for OpenBao auto-unseal; set as OPS_OPENBAO_KMS_KEY_ID in docker/.env.ops.prod."
+  value       = aws_kms_key.openbao_unseal.key_id
+}
+
+output "openbao_unseal_iam_user_name" {
+  description = "IAM user OpenBao authenticates as to reach its unseal KMS key. Create an access key for it and store both halves in SSM."
+  value       = aws_iam_user.openbao_unseal.name
+}

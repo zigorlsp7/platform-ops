@@ -120,10 +120,14 @@ services:
     cap_add:
       - IPC_LOCK
     command: ['server', '-config=/openbao/config/prod.hcl']
+    environment:
+      AWS_REGION: ${AWS_REGION:?AWS_REGION is required}
+      AWS_ACCESS_KEY_ID: ${OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID:?OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID is required}
+      AWS_SECRET_ACCESS_KEY: ${OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY:?OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY is required}
     ports:
       - '127.0.0.1:8200:8200'
     volumes:
-      - ../docker/openbao/prod.hcl:/openbao/config/prod.hcl:ro
+      - /opt/platform-ops/openbao/config:/openbao/config:ro
       - ops-prod-openbao-data:/openbao/data
     networks: [ops_shared]
 
