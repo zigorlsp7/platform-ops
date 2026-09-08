@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.2](https://github.com/zigordev/platform-ops/compare/v1.18.1...v1.18.2) (2026-09-08)
+
+
+### Bug Fixes
+
+* **ingress:** actually keep Unleash off the public ingress ([#128](https://github.com/zigordev/platform-ops/issues/128)) ([47831fa](https://github.com/zigordev/platform-ops/commit/47831fa89c4e4c310eedf3f08106db1a7aa6b19e))
+
 ## [1.18.1](https://github.com/zigordev/platform-ops/compare/v1.18.0...v1.18.1) (2026-09-08)
 
 
