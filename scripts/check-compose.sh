@@ -40,6 +40,9 @@ compose_vars=(
   AWS_REGION
   OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID
   OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY
+  UNLEASH_DB_PASSWORD
+  UNLEASH_ADMIN_USERNAME
+  UNLEASH_ADMIN_PASSWORD
 )
 for key in "${compose_vars[@]}"; do
   unset "$key" || true
@@ -84,6 +87,8 @@ set_key_if_missing_or_empty "$local_env_tmp" "GRAFANA_ADMIN_PASSWORD" "__placeho
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_INITIAL_USERNAME" "platform_ops_admin"
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_INITIAL_PASSWORD" "__placeholder_for_compose_validation__"
 set_key_if_missing_or_empty "$local_env_tmp" "TOLGEE_JWT_SECRET" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$local_env_tmp" "UNLEASH_DB_PASSWORD" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$local_env_tmp" "UNLEASH_ADMIN_PASSWORD" "__placeholder_for_compose_validation__"
 
 # Required keys for prod compose validation.
 set_key_if_missing_or_empty "$prod_env_tmp" "GRAFANA_ADMIN_USER" "platform_ops_admin"
@@ -94,8 +99,29 @@ set_key_if_missing_or_empty "$prod_env_tmp" "TOLGEE_JWT_SECRET" "__placeholder_f
 set_key_if_missing_or_empty "$prod_env_tmp" "AWS_REGION" "eu-west-1"
 set_key_if_missing_or_empty "$prod_env_tmp" "OPENBAO_UNSEAL_AWS_ACCESS_KEY_ID" "__placeholder_for_compose_validation__"
 set_key_if_missing_or_empty "$prod_env_tmp" "OPENBAO_UNSEAL_AWS_SECRET_ACCESS_KEY" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$prod_env_tmp" "UNLEASH_DB_PASSWORD" "__placeholder_for_compose_validation__"
+set_key_if_missing_or_empty "$prod_env_tmp" "UNLEASH_ADMIN_PASSWORD" "__placeholder_for_compose_validation__"
 
 docker compose --env-file "$local_env_tmp" -f "$REPO_ROOT/docker/compose.ops.local.yml" config > "$local_tmp"
 docker compose --env-file "$prod_env_tmp" -f "$REPO_ROOT/docker/compose.ops.prod.yml" config > "$prod_tmp"
 
-echo "Compose config render passed (local + prod)."
+caddyfile="$REPO_ROOT/docker/caddy/Caddyfile.ops.ingress.prod"
+ingress_env="$(docker compose --env-file "$prod_env_tmp" -f "$REPO_ROOT/docker/compose.ops.prod.yml" config --format json \
+  | jq -r '.services["central-ingress"].environment | keys[]')"
+
+missing=()
+while read -r placeholder; do
+  [ -n "$placeholder" ] || continue
+  if ! printf '%s\n' "$ingress_env" | grep -qx "$placeholder"; then
+    missing+=("$placeholder")
+  fi
+done < <(grep -oE '\{\$[A-Z0-9_]+\}' "$caddyfile" | tr -d '{$}' | sort -u)
+
+if [ "${#missing[@]}" -gt 0 ]; then
+  echo "Caddyfile placeholders not passed into the central-ingress container: ${missing[*]}" >&2
+  echo "Add each to the environment block of central-ingress in docker/compose.ops.prod.yml." >&2
+  echo "An unset placeholder becomes an empty site address, which Caddy refuses, taking every route down." >&2
+  exit 1
+fi
+
+echo "Compose config render passed (local + prod), and every Caddyfile placeholder reaches the ingress."
