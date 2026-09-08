@@ -18,6 +18,11 @@
   reverse_proxy kini-api:3000
 }
 
+{$CV_WEB_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy cv-web:3001
+}
+
 {$OPS_GRAFANA_DOMAIN} {
   encode zstd gzip
   reverse_proxy grafana:3000
