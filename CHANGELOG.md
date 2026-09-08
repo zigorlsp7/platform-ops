@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/zigordev/platform-ops/compare/v1.15.0...v1.15.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **ingress:** pass CV_WEB_DOMAIN into the ingress container ([#115](https://github.com/zigordev/platform-ops/issues/115)) ([13c5b00](https://github.com/zigordev/platform-ops/commit/13c5b00b6969e024791c0f68eee0453b1a47ac9b))
+
 ## [1.15.0](https://github.com/zigordev/platform-ops/compare/v1.14.2...v1.15.0) (2026-09-08)
 
 
