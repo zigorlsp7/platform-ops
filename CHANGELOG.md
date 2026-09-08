@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/zigordev/platform-ops/compare/v1.12.2...v1.13.0) (2026-09-08)
+
+
+### Features
+
+* **terraform:** provision kini's deploy role, registries and SSM grant ([#104](https://github.com/zigordev/platform-ops/issues/104)) ([1f5a0c2](https://github.com/zigordev/platform-ops/commit/1f5a0c2d0dd38ee7affd3428b54377acff016a54))
+
 ## [1.12.2](https://github.com/zigordev/platform-ops/compare/v1.12.1...v1.12.2) (2026-09-08)
 
 
