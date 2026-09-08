@@ -26,6 +26,13 @@ github_oidc_provider_arn    = "arn:aws:iam::123456789012:oidc-provider/token.act
 github_repository  = "your-org/platform-ops"
 github_environment = "production"
 
+# Dedicated kini deploy role + repositories.
+kini_github_repository        = "your-org/kini"
+kini_github_environment       = "production"
+kini_ecr_api_repository_name  = "kini/prod/api"
+kini_ecr_web_repository_name  = "kini/prod/web"
+kini_ssm_app_parameter_prefix = "/kini/prod/app"
+
 # Dedicated cv deploy role + repositories.
 cv_github_repository        = "your-org/cv"
 cv_github_environment       = "production"
