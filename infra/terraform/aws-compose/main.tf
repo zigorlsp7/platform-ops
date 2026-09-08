@@ -702,7 +702,10 @@ data "aws_iam_policy_document" "cv_github_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.cv_github_repository}:environment:${var.cv_github_environment}"]
+      values = compact([
+        "repo:${var.cv_github_repository}:environment:${var.cv_github_environment}",
+        var.cv_github_repository_id_path == "" ? "" : "repo:${var.cv_github_repository_id_path}:environment:${var.cv_github_environment}",
+      ])
     }
   }
 }
