@@ -8,6 +8,16 @@
   reverse_proxy gpool-api:3000
 }
 
+{$KINI_WEB_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy kini-web:3001
+}
+
+{$KINI_API_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy kini-api:3000
+}
+
 {$OPS_GRAFANA_DOMAIN} {
   encode zstd gzip
   reverse_proxy grafana:3000
