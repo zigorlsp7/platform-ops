@@ -232,6 +232,7 @@ services:
       CV_WEB_DOMAIN: ${CV_WEB_DOMAIN}
       OPS_GRAFANA_DOMAIN: ${OPS_GRAFANA_DOMAIN}
       OPS_TOLGEE_DOMAIN: ${OPS_TOLGEE_DOMAIN}
+      OPS_UNLEASH_DOMAIN: ${OPS_UNLEASH_DOMAIN}
       OPS_OPENBAO_DOMAIN: ${OPS_OPENBAO_DOMAIN}
     volumes:
       - ./caddy/Caddyfile.ops.ingress.prod:/etc/caddy/Caddyfile:ro
@@ -240,6 +241,7 @@ services:
     depends_on:
       - grafana
       - tolgee
+      - unleash
       - openbao
     networks: [ops_shared]
 

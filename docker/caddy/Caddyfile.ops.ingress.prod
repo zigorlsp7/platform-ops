@@ -33,6 +33,11 @@
   reverse_proxy tolgee:8080
 }
 
+{$OPS_UNLEASH_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy unleash:4242
+}
+
 {$OPS_OPENBAO_DOMAIN} {
   encode zstd gzip
 
