@@ -175,3 +175,18 @@ output "openbao_unseal_iam_user_name" {
   description = "IAM user OpenBao authenticates as to reach its unseal KMS key. Create an access key for it and store both halves in SSM."
   value       = aws_iam_user.openbao_unseal.name
 }
+
+output "github_probe_role_arn" {
+  description = "IAM role ARN the uptime probe assumes; set as repository variable AWS_PROBE_ROLE_ARN."
+  value       = aws_iam_role.github_probe.arn
+}
+
+output "power_schedule" {
+  description = "Scheduled power window for the shared host."
+  value = {
+    enabled  = var.power_schedule_enabled
+    timezone = var.power_schedule_timezone
+    off      = var.power_off_schedule
+    on       = var.power_on_schedule
+  }
+}

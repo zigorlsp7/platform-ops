@@ -101,6 +101,15 @@ npm run local:reset
 
 Destroy the full AWS environment later with `docs/cloud-destroy.md`.
 
+## Power
+
+Production is one EC2 host, so it can be switched off to save compute cost without losing anything: every volume, the Elastic IP and the instance id survive a stop.
+
+- Manual: run the `Power` workflow (`.github/workflows/power.yml`) with `on`, `off` or `status`.
+- Scheduled: the `power_*` variables in `infra/terraform/aws-compose/environments/prod.tfvars` drive two EventBridge Scheduler rules.
+
+Details, including what deploys and the uptime probe do while the host is off, are in `docs/power.md`.
+
 ## Ops UI Access (Private via SSM)
 
 Default local URLs once tunnels are open:

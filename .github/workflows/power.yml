@@ -1,0 +1,195 @@
+name: Power
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'status, on or off'
+        required: true
+        default: status
+        type: choice
+        options:
+          - status
+          - 'on'
+          - 'off'
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-aws-prod
+  cancel-in-progress: false
+
+jobs:
+  power:
+    name: Host ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 25
+
+    steps:
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+      - name: Apply ${{ inputs.action }}
+        env:
+          ACTION: ${{ inputs.action }}
+          INSTANCE_ID: ${{ vars.AWS_DEPLOY_INSTANCE_ID }}
+          GPOOL_API_DOMAIN: ${{ vars.GPOOL_API_DOMAIN }}
+          OPS_GRAFANA_DOMAIN: ${{ vars.OPS_GRAFANA_DOMAIN }}
+        run: |
+          set -euo pipefail
+
+          host_state() {
+            aws ec2 describe-instances \
+              --instance-ids "$INSTANCE_ID" \
+              --query 'Reservations[0].Instances[0].State.Name' \
+              --output text
+          }
+
+          http_code() {
+            curl -sS --max-time 10 -o /dev/null --write-out '%{http_code}' "$1" 2>/dev/null || echo 000
+          }
+
+          wait_for_ssm() {
+            local attempt
+            local ping
+
+            for attempt in $(seq 1 60); do
+              ping="$(aws ssm describe-instance-information \
+                --filters "Key=InstanceIds,Values=$INSTANCE_ID" \
+                --query 'InstanceInformationList[0].PingStatus' \
+                --output text 2>/dev/null || true)"
+              if [ "$ping" = "Online" ]; then
+                echo "SSM agent online after $((attempt * 5))s"
+                return 0
+              fi
+              sleep 5
+            done
+
+            echo "::warning::SSM agent not online after 5 minutes; deploys fail until it is"
+          }
+
+          wait_for_endpoint() {
+            local name="$1"
+            local domain="$2"
+            local path="$3"
+            local attempt
+            local code
+
+            if [ -z "$domain" ]; then
+              echo "::notice::$name has no domain configured, skipping"
+              return 0
+            fi
+
+            for attempt in $(seq 1 60); do
+              code="$(http_code "https://${domain}${path}")"
+              if [ "$code" = "200" ]; then
+                echo "$name answered 200 after $((attempt * 10))s"
+                return 0
+              fi
+              sleep 10
+            done
+
+            echo "::warning::$name still answers $code after 10 minutes"
+          }
+
+          report_endpoint() {
+            local name="$1"
+            local domain="$2"
+            local path="$3"
+
+            if [ -z "$domain" ]; then
+              echo "$name: no domain configured"
+              return 0
+            fi
+
+            echo "$name: HTTP $(http_code "https://${domain}${path}")"
+          }
+
+          start_host() {
+            aws ec2 start-instances --instance-ids "$INSTANCE_ID" >/dev/null
+            echo "Start requested"
+            aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+            echo "Instance running; waiting for the services"
+            wait_for_ssm
+            wait_for_endpoint grafana "$OPS_GRAFANA_DOMAIN" /api/health
+            wait_for_endpoint gpool-api "$GPOOL_API_DOMAIN" /health
+          }
+
+          stop_host() {
+            aws ec2 stop-instances --instance-ids "$INSTANCE_ID" >/dev/null
+            echo "Stop requested"
+            aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID"
+            echo "Instance stopped"
+          }
+
+          state="$(host_state)"
+          echo "Host $INSTANCE_ID is $state"
+
+          case "$ACTION" in
+            status)
+              report_endpoint grafana "$OPS_GRAFANA_DOMAIN" /api/health
+              report_endpoint gpool-api "$GPOOL_API_DOMAIN" /health
+              ;;
+            on)
+              case "$state" in
+                running)
+                  echo "Nothing to do"
+                  ;;
+                pending)
+                  aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+                  wait_for_ssm
+                  ;;
+                stopping)
+                  aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID"
+                  start_host
+                  ;;
+                stopped)
+                  start_host
+                  ;;
+                *)
+                  echo "Cannot start a host that is $state" >&2
+                  exit 1
+                  ;;
+              esac
+              ;;
+            off)
+              case "$state" in
+                stopped)
+                  echo "Nothing to do"
+                  ;;
+                stopping)
+                  aws ec2 wait instance-stopped --instance-ids "$INSTANCE_ID"
+                  echo "Instance stopped"
+                  ;;
+                pending)
+                  aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+                  stop_host
+                  ;;
+                running)
+                  stop_host
+                  ;;
+                *)
+                  echo "Cannot stop a host that is $state" >&2
+                  exit 1
+                  ;;
+              esac
+              ;;
+            *)
+              echo "Unknown action: $ACTION" >&2
+              exit 1
+              ;;
+          esac
+
+          state="$(host_state)"
+          echo "Host $INSTANCE_ID is now $state"
+          {
+            echo "### Host $INSTANCE_ID"
+            echo ""
+            echo "- action: \`$ACTION\`"
+            echo "- state: \`$state\`"
+          } >> "$GITHUB_STEP_SUMMARY"
