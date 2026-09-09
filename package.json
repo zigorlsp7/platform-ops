@@ -12,6 +12,8 @@
     "check:workflows": "bash ./scripts/check-workflows.sh",
     "check:compose": "bash ./scripts/check-compose.sh",
     "check:terraform": "bash ./scripts/check-terraform-fmt.sh",
+    "ci:quality:local": "npm run format:check && npm run typecheck && npm run test:cov && npm run test:shell && npm run check:hooks",
+    "precommit:checks": "npm run check:secrets && npm run ci:quality:local",
     "check:hooks": "npm run check:secrets && npm run check:shell && npm run check:workflows && npm run check:compose && npm run check:terraform",
     "local:up": "bash ./scripts/local-stack-up-ops.sh",
     "local:down": "bash ./scripts/local-stack-down-ops.sh",
@@ -25,6 +27,8 @@
     "check:secret-expiry": "node ./scripts/check-secret-expiry.mjs"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@opentelemetry/api": "^1.9.1",
     "@types/express": "^5.0.6",
     "@types/node": "^26.4.0",
