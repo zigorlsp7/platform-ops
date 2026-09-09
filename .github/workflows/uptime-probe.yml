@@ -136,7 +136,7 @@ jobs:
 
       - name: Open or update an issue
         if: steps.probe.outputs.failures != ''
-        uses: actions/github-script@60a0d83039c74a4aa543e0ccb8d2d0e0adc7f745 # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
           FAILURES: ${{ steps.probe.outputs.failures }}
         with:
@@ -175,7 +175,7 @@ jobs:
 
       - name: Close the issue when everything is healthy
         if: steps.probe.outputs.failures == ''
-        uses: actions/github-script@60a0d83039c74a4aa543e0ccb8d2d0e0adc7f745 # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const title = 'Uptime probe: public endpoints failing';
