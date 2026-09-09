@@ -34,8 +34,64 @@ teardown() {
 
 @test "upsert_env_value appends a key that is not there yet" {
   upsert_env_value "$ENV_FILE" NEW_KEY value
-  [ "$(tail -n1 "$ENV_FILE")" = "NEW_KEY=value" ]
+  [ "$(tail -n1 "$ENV_FILE")" = 'NEW_KEY="value"' ]
+  [ "$(read_env_value "$ENV_FILE" NEW_KEY)" = "value" ]
   [ "$(grep -c '' "$ENV_FILE")" -eq 4 ]
+}
+
+@test "upsert_env_value does not touch a key that merely shares a prefix" {
+  printf 'DB_HOST_REPLICA=replica.internal\n' >> "$ENV_FILE"
+  upsert_env_value "$ENV_FILE" DB_HOST db.example.internal
+  [ "$(read_env_value "$ENV_FILE" DB_HOST_REPLICA)" = "replica.internal" ]
+}
+
+@test "read_env_value returns an unquoted value written by hand unchanged" {
+  [ "$(read_env_value "$ENV_FILE" APP_ENV)" = "production" ]
+}
+
+@test "read_env_value returns a single-quoted value written by hand literally" {
+  cat >> "$ENV_FILE" <<'LITERAL_LINE'
+LITERAL='a $b \\c'
+LITERAL_LINE
+  [ "$(read_env_value "$ENV_FILE" LITERAL)" = 'a $b \\c' ]
+}
+
+@test "upsert_env_value keeps a value with spaces on one line" {
+  upsert_env_value "$ENV_FILE" SMTP_PASSWORD 'two words here'
+  [ "$(grep -c '^SMTP_PASSWORD=' "$ENV_FILE")" -eq 1 ]
+  [ "$(read_env_value "$ENV_FILE" SMTP_PASSWORD)" = "two words here" ]
+}
+
+@test "upsert_env_value round-trips backslashes, quotes and dollar signs" {
+  local value
+  value='a\nb\\c "dq" '"'"'sq'"'"' $HOME $$ ${X}'
+  upsert_env_value "$ENV_FILE" TOKEN "$value"
+  [ "$(read_env_value "$ENV_FILE" TOKEN)" = "$value" ]
+}
+
+@test "load_env_file exports every key without evaluating anything" {
+  local marker value
+  marker="$(mktemp -u)"
+  value='sp ace `touch '"$marker"'` $(touch '"$marker"') $HOME #hash ;semi'
+  upsert_env_value "$ENV_FILE" SECRET "$value"
+  run bash -c "source '$BATS_TEST_DIRNAME/../../scripts/lib/env-file.sh'; load_env_file '$ENV_FILE'; printf '%s|%s' \"\$SECRET\" \"\$DB_HOST\""
+  [ "$status" -eq 0 ]
+  [ "$output" = "$value|stale.internal" ]
+  [ ! -e "$marker" ]
+}
+
+@test "a written value reaches docker compose interpolation intact" {
+  command -v docker >/dev/null 2>&1 || skip "docker not available"
+  docker compose version >/dev/null 2>&1 || skip "docker compose not available"
+  local value compose_file
+  value='sp ace `whoami` $(id -u) $HOME "dq" '"'"'sq'"'"' back\slash #hash'
+  upsert_env_value "$ENV_FILE" SECRET "$value"
+  compose_file="$(mktemp)"
+  printf 'services:\n  app:\n    image: busybox\n    environment:\n      SECRET: ${SECRET}\n' > "$compose_file"
+  run docker compose --env-file "$ENV_FILE" -f "$compose_file" config --format json
+  rm -f "$compose_file"
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r '.services.app.environment.SECRET' | sed 's/\$\$/$/g')" = "$value" ]
 }
 
 @test "upsert_env_value preserves a value containing equals signs" {
