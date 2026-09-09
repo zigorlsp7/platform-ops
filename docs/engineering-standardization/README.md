@@ -28,6 +28,7 @@ one.
 | [conventions.md](conventions.md)           | Node version, test runner, commits, code layout       |
 | [ci-pipeline.md](ci-pipeline.md)           | The jobs every repository runs, and what each gates   |
 | [observability.md](observability.md)       | Traces, metrics, logs, health — the contract          |
+| [http-api.md](http-api.md)                 | Error body, paths, status codes, versioning, health   |
 | [security.md](security.md)                 | Secrets, scanning, headers, dependencies              |
 | [operations.md](operations.md)             | Backups, shutdown, alerting, runbooks                 |
 | [adoption.md](adoption.md)                 | Where each repository stands, and the migration order |
