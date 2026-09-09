@@ -597,12 +597,13 @@ resource "aws_iam_instance_profile" "ec2" {
 }
 
 resource "aws_instance" "app" {
-  ami                    = local.selected_ami_id
-  instance_type          = var.instance_type
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.app.id]
-  iam_instance_profile   = aws_iam_instance_profile.ec2.name
-  key_name               = var.key_name != "" ? var.key_name : null
+  ami                     = local.selected_ami_id
+  instance_type           = var.instance_type
+  subnet_id               = aws_subnet.public.id
+  vpc_security_group_ids  = [aws_security_group.app.id]
+  iam_instance_profile    = aws_iam_instance_profile.ec2.name
+  key_name                = var.key_name != "" ? var.key_name : null
+  disable_api_termination = true
 
   user_data = templatefile("${path.module}/templates/user-data.sh.tftpl", {
     deploy_base_dir = var.deploy_base_dir
@@ -887,6 +888,27 @@ data "aws_iam_policy_document" "github_deploy" {
     effect = "Allow"
     actions = [
       "ec2:DescribeInstances",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "InstancePower"
+    effect = "Allow"
+    actions = [
+      "ec2:StartInstances",
+      "ec2:StopInstances",
+    ]
+    resources = [
+      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/${aws_instance.app.id}",
+    ]
+  }
+
+  statement {
+    sid    = "SsmInstanceInformation"
+    effect = "Allow"
+    actions = [
+      "ssm:DescribeInstanceInformation",
     ]
     resources = ["*"]
   }
@@ -1248,4 +1270,162 @@ resource "aws_iam_policy" "notifications_github_deploy" {
 resource "aws_iam_role_policy_attachment" "notifications_github_deploy" {
   role       = aws_iam_role.notifications_github_deploy.name
   policy_arn = aws_iam_policy.notifications_github_deploy.arn
+}
+
+data "aws_iam_policy_document" "github_probe_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Federated"
+      identifiers = [local.github_oidc_provider_arn]
+    }
+
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${var.github_repository}:ref:refs/heads/main"]
+    }
+  }
+}
+
+resource "aws_iam_role" "github_probe" {
+  name               = "${local.name_prefix}-github-probe"
+  assume_role_policy = data.aws_iam_policy_document.github_probe_assume_role.json
+  tags               = local.tags
+}
+
+data "aws_iam_policy_document" "github_probe" {
+  statement {
+    sid    = "DescribeInstances"
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeInstances",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "github_probe" {
+  name   = "${local.name_prefix}-github-probe"
+  policy = data.aws_iam_policy_document.github_probe.json
+  tags   = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "github_probe" {
+  role       = aws_iam_role.github_probe.name
+  policy_arn = aws_iam_policy.github_probe.arn
+}
+
+data "aws_iam_policy_document" "scheduler_power_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["scheduler.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+}
+
+resource "aws_iam_role" "scheduler_power" {
+  name               = "${local.name_prefix}-scheduler-power"
+  assume_role_policy = data.aws_iam_policy_document.scheduler_power_assume_role.json
+  tags               = local.tags
+}
+
+data "aws_iam_policy_document" "scheduler_power" {
+  statement {
+    sid    = "InstancePower"
+    effect = "Allow"
+    actions = [
+      "ec2:StartInstances",
+      "ec2:StopInstances",
+    ]
+    resources = [
+      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/${aws_instance.app.id}",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "scheduler_power" {
+  name   = "${local.name_prefix}-scheduler-power"
+  policy = data.aws_iam_policy_document.scheduler_power.json
+  tags   = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "scheduler_power" {
+  role       = aws_iam_role.scheduler_power.name
+  policy_arn = aws_iam_policy.scheduler_power.arn
+}
+
+resource "aws_scheduler_schedule_group" "power" {
+  name = "${local.name_prefix}-power"
+  tags = local.tags
+}
+
+resource "aws_scheduler_schedule" "power_off" {
+  name                         = "${local.name_prefix}-power-off"
+  group_name                   = aws_scheduler_schedule_group.power.name
+  state                        = var.power_schedule_enabled ? "ENABLED" : "DISABLED"
+  schedule_expression          = var.power_off_schedule
+  schedule_expression_timezone = var.power_schedule_timezone
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = "arn:aws:scheduler:::aws-sdk:ec2:stopInstances"
+    role_arn = aws_iam_role.scheduler_power.arn
+    input    = jsonencode({ InstanceIds = [aws_instance.app.id] })
+
+    retry_policy {
+      maximum_event_age_in_seconds = 3600
+      maximum_retry_attempts       = 10
+    }
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.scheduler_power]
+}
+
+resource "aws_scheduler_schedule" "power_on" {
+  name                         = "${local.name_prefix}-power-on"
+  group_name                   = aws_scheduler_schedule_group.power.name
+  state                        = var.power_schedule_enabled ? "ENABLED" : "DISABLED"
+  schedule_expression          = var.power_on_schedule
+  schedule_expression_timezone = var.power_schedule_timezone
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = "arn:aws:scheduler:::aws-sdk:ec2:startInstances"
+    role_arn = aws_iam_role.scheduler_power.arn
+    input    = jsonencode({ InstanceIds = [aws_instance.app.id] })
+
+    retry_policy {
+      maximum_event_age_in_seconds = 3600
+      maximum_retry_attempts       = 10
+    }
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.scheduler_power]
 }
