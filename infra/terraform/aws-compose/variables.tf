@@ -282,3 +282,37 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "power_schedule_enabled" {
+  description = "Whether the scheduled power window stops and starts the host."
+  type        = bool
+  default     = false
+}
+
+variable "power_schedule_timezone" {
+  description = "IANA timezone the power window cron expressions are evaluated in."
+  type        = string
+  default     = "Europe/Madrid"
+}
+
+variable "power_off_schedule" {
+  description = "EventBridge Scheduler cron expression that stops the host, e.g. cron(0 1 * * ? *)."
+  type        = string
+  default     = "cron(0 1 * * ? *)"
+
+  validation {
+    condition     = startswith(var.power_off_schedule, "cron(")
+    error_message = "power_off_schedule must be an EventBridge cron expression such as cron(0 1 * * ? *)."
+  }
+}
+
+variable "power_on_schedule" {
+  description = "EventBridge Scheduler cron expression that starts the host, e.g. cron(0 8 * * ? *)."
+  type        = string
+  default     = "cron(0 8 * * ? *)"
+
+  validation {
+    condition     = startswith(var.power_on_schedule, "cron(")
+    error_message = "power_on_schedule must be an EventBridge cron expression such as cron(0 8 * * ? *)."
+  }
+}

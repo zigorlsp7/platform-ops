@@ -56,3 +56,8 @@ notifications_ssm_app_parameter_prefix = "/notifications/prod/app"
 
 # Parameter prefixes consumed by scripts/prod-deploy-remote.sh.
 ssm_ops_parameter_prefix = "/platform-ops/prod/ops"
+
+power_schedule_enabled  = false
+power_schedule_timezone = "Europe/Madrid"
+power_off_schedule      = "cron(0 1 * * ? *)"
+power_on_schedule       = "cron(0 8 * * ? *)"

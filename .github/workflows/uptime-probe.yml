@@ -26,6 +26,7 @@ on:
 permissions:
   contents: read
   issues: write
+  id-token: write
 
 concurrency:
   group: uptime-probe
@@ -38,9 +39,72 @@ jobs:
     timeout-minutes: 5
 
     steps:
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6
+        if: vars.AWS_PROBE_ROLE_ARN != ''
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_PROBE_ROLE_ARN }}
+
+      - name: Read the host's power state
+        id: host
+        if: vars.AWS_PROBE_ROLE_ARN != ''
+        run: |
+          set -euo pipefail
+
+          read -r instance_id state launch_time reason < <(
+            aws ec2 describe-instances \
+              --filters Name=tag:Project,Values=platform-ops Name=tag:Environment,Values=prod Name=tag:Name,Values=platform-ops-prod-app-host \
+              --query 'Reservations[].Instances[] | [0].[InstanceId,State.Name,LaunchTime,StateReason.Code]' \
+              --output text
+          )
+
+          skip="false"
+          failure=""
+
+          if [ -z "$state" ] || [ "$instance_id" = "None" ]; then
+            state="missing"
+          fi
+
+          case "$state" in
+            running)
+              uptime_seconds=$(( $(date -u +%s) - $(date -u -d "$launch_time" +%s) ))
+              if [ "$uptime_seconds" -lt 600 ]; then
+                skip="true"
+                echo "::notice::$instance_id started ${uptime_seconds}s ago; letting the services come up before probing"
+              fi
+              ;;
+            pending)
+              skip="true"
+              echo "::notice::$instance_id is starting; skipping this run"
+              ;;
+            stopping|stopped)
+              if [ "$reason" = "Client.UserInitiatedShutdown" ]; then
+                skip="true"
+                echo "::notice::$instance_id is powered off on purpose; skipping this run"
+              else
+                failure="- **host** — $instance_id is $state ($reason), and nobody asked for that\n"
+                echo "::error::$instance_id is $state ($reason)"
+              fi
+              ;;
+            *)
+              failure="- **host** — the prod host is $state\n"
+              echo "::error::the prod host is $state"
+              ;;
+          esac
+
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+          {
+            echo "failure<<HOST_EOF"
+            printf '%s' "$failure"
+            echo ""
+            echo "HOST_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Probe
         id: probe
+        if: steps.host.outputs.skip != 'true'
         env:
+          HOST_FAILURE: ${{ steps.host.outputs.failure }}
           # Set as repository variables, not secrets: they are public hostnames
           # and a probe that cannot be read is a probe nobody trusts.
           GPOOL_API_DOMAIN: ${{ vars.GPOOL_API_DOMAIN }}
@@ -49,7 +113,7 @@ jobs:
         run: |
           set -uo pipefail
 
-          failures=""
+          failures="${HOST_FAILURE:-}"
 
           probe_health() {
             local name="$1"
@@ -136,7 +200,7 @@ jobs:
 
       - name: Open or update an issue
         if: steps.probe.outputs.failures != ''
-        uses: actions/github-script@60a0d83039c74a4aa543e0ccb8d2d0e0adc7f745 # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
           FAILURES: ${{ steps.probe.outputs.failures }}
         with:
@@ -174,8 +238,8 @@ jobs:
             await github.rest.issues.createComment({ ...context.repo, issue_number: open.number, body });
 
       - name: Close the issue when everything is healthy
-        if: steps.probe.outputs.failures == ''
-        uses: actions/github-script@60a0d83039c74a4aa543e0ccb8d2d0e0adc7f745 # v7.0.1
+        if: steps.host.outputs.skip != 'true' && steps.probe.outputs.failures == ''
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const title = 'Uptime probe: public endpoints failing';
