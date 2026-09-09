@@ -44,8 +44,7 @@ the thing tracing is for; the answer is usually a single database call.
 ## Note
 
 500ms is a single target for every service in the estate. It is generous for
-`cv-web`, which serves static pages, and tight for
-`trading-bot-research-backtesting`, which does real work per request. The
-reasoning for one number rather than per-service targets is in
+`cv-web`, which serves static pages, and tight for anything that does real work
+per request. The reasoning for one number rather than per-service targets is in
 [operations.md](../engineering-standardization/operations.md); revisit it when a
 service is alerting on latency that is normal for what it does.

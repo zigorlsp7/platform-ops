@@ -33,26 +33,6 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ['kini-web:3001']
-  - job_name: 'trading-bot-operator-console'
-    metrics_path: /metrics
-    static_configs:
-      - targets: ['trading-bot-operator-console:3000']
-  - job_name: 'trading-bot-control-plane'
-    metrics_path: /metrics
-    static_configs:
-      - targets: ['trading-bot-api:8080']
-  - job_name: 'trading-bot-market-data'
-    metrics_path: /metrics
-    static_configs:
-      - targets: ['trading-bot-market-data:8090']
-  - job_name: 'trading-bot-research-backtesting'
-    metrics_path: /metrics
-    static_configs:
-      - targets: ['trading-bot-research-backtesting:8110']
-  - job_name: 'trading-bot-execution'
-    metrics_path: /metrics
-    static_configs:
-      - targets: ['trading-bot-execution:8120']
   # Host: disk, memory, CPU. Nothing else in the estate produces these.
   - job_name: 'node-exporter'
     metrics_path: /metrics
