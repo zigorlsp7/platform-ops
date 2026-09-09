@@ -400,10 +400,7 @@ if ! command -v envsubst >/dev/null 2>&1; then
   exit 1
 fi
 chmod +x scripts/render-alertmanager-config.sh
-set -a
-# shellcheck disable=SC1090
-. "$OPS_ENV_FILE"
-set +a
+load_env_file "$OPS_ENV_FILE"
 ./scripts/render-alertmanager-config.sh \
   docker/alertmanager/config.prod.yml.tpl \
   docker/alertmanager/config.prod.yml
