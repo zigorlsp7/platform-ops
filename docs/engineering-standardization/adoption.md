@@ -112,10 +112,9 @@ Roughly two weeks. This is where the platform starts paying for itself.
    is canonical and the `common/metrics` vs `metrics` path split is gone —
    everything is `src/observability/`.
 
-   The sync script and its drift check were removed on 2026-09-07. The copies in
-   gpool, kini and notifications are now independent: a fix here does not reach
-   them, and divergence is no longer reported. Propagating a change means editing
-   each copy by hand until the kit is distributed some other way.
+   The copies in gpool, kini, notifications, cv and trading-bot are maintained by
+   hand: a change here reaches a consumer when someone carries it over, and
+   nothing reports divergence.
 
    Three real defects surfaced while converging the two implementations:
    - **gpool imported `tracing` last.** Auto-instrumentation patches modules as
@@ -147,10 +146,10 @@ Roughly two weeks. This is where the platform starts paying for itself.
      but produced nothing alertable. Its default metrics also lost the
      `trading_bot_` prefix, which had made every cross-service query special-case
      this one service.
-   - The sync script now vendors per flavour: the framework-free core everywhere,
-     `nest.ts` only to Nest repos, `fastify.ts` only to trading-bot. It also
-     appends `.js` to relative imports for the ESM consumer, since `nodenext`
-     requires the extension and the CommonJS repos must not have it.
+   - The kit is vendored per flavour: the framework-free core everywhere,
+     `nest.ts` only to Nest repos, `fastify.ts` only to trading-bot, with `.js`
+     appended to relative imports in the ESM consumer, since `nodenext` requires
+     the extension and the CommonJS repos must not have it.
    - trading-bot read `SERVICE_NAME` where the rest of the estate reads
      `OTEL_SERVICE_NAME`. Converged, across the control-plane and all three Rust
      crates.
