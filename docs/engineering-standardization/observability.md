@@ -100,11 +100,10 @@ faithfully collects all of it and can tell you almost nothing about it.
 ## 4. The shared kit
 
 Every Node service runs a copy of the observability code that originated in
-`platform-ops/packages/observability/`.
-
-The sync script and drift check were removed on 2026-09-07, so the copies are
-now independent forks. The `DO NOT EDIT` headers they still carry are stale —
-nothing propagates a change from here, and nothing reports divergence.
+`platform-ops/packages/observability/`, kept under `apps/*/src/observability/`
+and maintained by hand in each repository. Nothing propagates a change from
+here and nothing compares the copies; the kit is the reference, and carrying a
+change into a consumer is a deliberate edit there.
 
 | file                         | for                                               |
 | ---------------------------- | ------------------------------------------------- |
@@ -117,8 +116,7 @@ nothing propagates a change from here, and nothing reports divergence.
 Vendored rather than published because these are seven repositories across two
 GitHub owners, built by Dockerfiles whose dependency stage copies only
 manifests. A private registry would mean a token in every CI run and a build
-secret in every image, for five files. What matters is that copies cannot
-silently diverge, and the drift check gives exactly that.
+secret in every image, for five files.
 
 ### The Rust half
 
