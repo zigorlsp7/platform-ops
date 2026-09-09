@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/zigordev/platform-ops/compare/v1.19.1...v1.20.0) (2026-09-09)
+
+
+### Features
+
+* **power:** stop and start the prod host on demand and on a schedule ([#135](https://github.com/zigordev/platform-ops/issues/135)) ([a213154](https://github.com/zigordev/platform-ops/commit/a213154dff0f9dff1af96700fbdc216a99aaad4c))
+
 ## [1.19.1](https://github.com/zigordev/platform-ops/compare/v1.19.0...v1.19.1) (2026-09-09)
 
 
