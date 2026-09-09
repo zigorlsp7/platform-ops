@@ -197,7 +197,7 @@ groups:
         # and inferring it would make this alert vanish exactly when a service is
         # misconfigured.
         expr: |
-          up{job=~"gpool-api|kini-api|notifications-api|trading-bot-control-plane"} == 1
+          up{job=~"gpool-api|kini-api|notifications-api"} == 1
           unless on (job)
           service_health_status
         for: 15m

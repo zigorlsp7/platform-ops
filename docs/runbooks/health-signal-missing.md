@@ -41,7 +41,7 @@ goes stale, then absent.
 ## How to see
 
 ```promql
-up{job=~"gpool-api|kini-api|notifications-api|trading-bot-control-plane"} == 1
+up{job=~"gpool-api|kini-api|notifications-api"} == 1
   unless on (job) service_health_status
 ```
 

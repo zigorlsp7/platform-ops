@@ -24,8 +24,7 @@ firing alert means it is still happening — not that it happened earlier.
 ## Whether it matters
 
 Yes, and to real people: a 5xx is a request that failed. Which people depends on
-`job` — `gpool-api` is signup and booking, `notifications-api` is outbound mail,
-`trading-bot-execution` is orders.
+`job` — `gpool-api` is signup and booking, `notifications-api` is outbound mail.
 
 ## How to see
 
